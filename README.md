@@ -6,6 +6,7 @@ Logistics companies sign up and run their daily operations here. Later, vehicle 
 
 ## What works so far
 
+- **Two kinds of accounts.** At sign-up people choose **I deliver goods**, **I rent out vehicles**, or **both**. Delivery companies get the dispatch tools. Vehicle owners join the marketplace waitlist (vehicle types, how many, areas served) and see a "coming soon" page. Either can switch on the other role later. Vehicle-only accounts can never see delivery data (enforced in the database)
 - Sign up, log in and log out (email and password)
 - Create your business on first login
 - Add drivers, and deactivate or reactivate them
@@ -28,7 +29,7 @@ Logistics companies sign up and run their daily operations here. Later, vehicle 
 You need Node.js 20 or newer and a free Supabase project.
 
 1. **Create a Supabase project** at [supabase.com](https://supabase.com).
-2. **Set up the database.** In the Supabase dashboard, open **SQL Editor** and run each file in `supabase/migrations/` in order (`0001_init.sql`, `0002_location_requests.sql`, then `0003_driver_app.sql`). Paste the contents and click **Run**.
+2. **Set up the database.** In the Supabase dashboard, open **SQL Editor** and run each file in `supabase/migrations/` in order (`0001_init.sql`, `0002_location_requests.sql`, `0003_driver_app.sql`, then `0004_account_types.sql`). Paste the contents and click **Run**.
 3. **For quick testing, turn off email confirmation:** **Authentication → Sign In / Providers → Email**, switch off "Confirm email". Switch it back on before going live.
 4. **Add your keys.** Copy `.env.example` to `.env.local` and fill in the values from **Project Settings → API**. The `service_role` key is needed for delivery photos; keep it secret.
 5. **Install and start:**
@@ -48,7 +49,8 @@ src/proxy.ts           Keeps the login session fresh, redirects logged-out users
 src/lib/dal.ts         Data access layer: who is signed in, which company they belong to
 src/lib/supabase/      Supabase clients
 src/app/login/         Log in and sign up
-src/app/onboarding/    Create your business
+src/app/onboarding/    Create your account and choose: deliver goods, rent out vehicles, or both
+src/app/vendor/        Vehicle owners: marketplace waitlist and vehicle details
 src/app/dashboard/     Dispatch board, new order, drivers
 src/app/c/[token]/     Public page where customers confirm their location
 src/app/d/             Driver app (offline-first, installable)

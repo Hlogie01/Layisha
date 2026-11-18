@@ -13,7 +13,19 @@ export interface Company {
   name: string;
   phone: string | null;
   city: string | null;
+  is_logistics: boolean;
+  is_vendor: boolean;
 }
+
+export const VEHICLE_TYPES = [
+  "Bakkie (1 ton)",
+  "Panel van",
+  "Truck up to 4 ton",
+  "Truck 4 to 8 ton",
+  "Truck over 8 ton",
+  "Refrigerated truck",
+  "Other",
+] as const;
 
 export interface Driver {
   id: string;

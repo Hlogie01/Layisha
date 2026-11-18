@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { Card, Logo } from "@/components/ui";
-import { getMembership } from "@/lib/dal";
+import { getMembership, homeFor } from "@/lib/dal";
 import { CompanyForm } from "./company-form";
 
-export const metadata: Metadata = { title: "Set up your business" };
+export const metadata: Metadata = { title: "Set up your account" };
 
 async function OnboardingGate() {
-  if (await getMembership()) redirect("/dashboard");
+  const membership = await getMembership();
+  if (membership) redirect(homeFor(membership.company));
   return <CompanyForm />;
 }
 
@@ -18,9 +19,9 @@ export default function OnboardingPage() {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <Logo className="text-3xl" />
-          <h1 className="mt-3 text-lg font-semibold">Set up your business</h1>
+          <h1 className="mt-3 text-lg font-semibold">Set up your account</h1>
           <p className="mt-1 text-sm text-stone-600">
-            This is the business your orders and drivers belong to.
+            Tell us a bit about you so we can set up the right tools.
           </p>
         </div>
         <Card>

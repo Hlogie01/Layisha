@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Card } from "@/components/ui";
-import { requireMembership } from "@/lib/dal";
+import { requireLogistics } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import type { Driver } from "@/lib/types";
 import { OrderForm } from "./order-form";
@@ -9,7 +9,7 @@ import { OrderForm } from "./order-form";
 export const metadata: Metadata = { title: "New order" };
 
 async function NewOrder() {
-  const { company } = await requireMembership();
+  const { company } = await requireLogistics();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("drivers")

@@ -8,6 +8,7 @@ const links = [
   { href: "/dashboard", label: "Dispatch" },
   { href: "/dashboard/orders/new", label: "New order" },
   { href: "/dashboard/drivers", label: "Drivers" },
+  { href: "/vendor", label: "Vehicles" },
 ] as const;
 
 export function NavLinks() {

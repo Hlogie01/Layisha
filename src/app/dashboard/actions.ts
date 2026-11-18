@@ -5,7 +5,7 @@ import { refresh } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requireMembership } from "@/lib/dal";
+import { requireLogistics } from "@/lib/dal";
 import { normaliseSaPhone } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
 import { ORDER_STATUSES, PAYMENT_TYPES } from "@/lib/types";
@@ -32,7 +32,7 @@ const driverSchema = z.object({
 });
 
 export async function addDriver(_prev: FormState, formData: FormData): Promise<FormState> {
-  const { company } = await requireMembership();
+  const { company } = await requireLogistics();
   const parsed = driverSchema.safeParse({
     name: formData.get("name"),
     phone: formData.get("phone"),
@@ -57,7 +57,7 @@ export async function addDriver(_prev: FormState, formData: FormData): Promise<F
 }
 
 export async function setDriverActive(formData: FormData) {
-  const { company } = await requireMembership();
+  const { company } = await requireLogistics();
   const id = z.string().uuid().parse(formData.get("driver_id"));
   const active = formData.get("active") === "true";
 
@@ -88,7 +88,7 @@ const orderSchema = z.object({
 });
 
 export async function createOrder(_prev: FormState, formData: FormData): Promise<FormState> {
-  const { company } = await requireMembership();
+  const { company } = await requireLogistics();
   const parsed = orderSchema.safeParse({
     customer_name: formData.get("customer_name"),
     customer_whatsapp: formData.get("customer_whatsapp"),
@@ -167,7 +167,7 @@ export async function createOrder(_prev: FormState, formData: FormData): Promise
 }
 
 export async function assignDriver(formData: FormData) {
-  const { company } = await requireMembership();
+  const { company } = await requireLogistics();
   const orderId = z.string().uuid().parse(formData.get("order_id"));
   const raw = formData.get("driver_id");
   const driverId = raw ? z.string().uuid().parse(raw) : null;
@@ -185,7 +185,7 @@ export async function assignDriver(formData: FormData) {
 const statusValues = ORDER_STATUSES.map((s) => s.value) as [string, ...string[]];
 
 export async function updateOrderStatus(formData: FormData) {
-  const { company } = await requireMembership();
+  const { company } = await requireLogistics();
   const orderId = z.string().uuid().parse(formData.get("order_id"));
   const status = z.enum(statusValues).parse(formData.get("status"));
 
@@ -225,7 +225,7 @@ async function appOrigin() {
  * returns a wa.me link for the dispatcher to tap and send).
  */
 export async function requestCustomerLocation(orderId: string): Promise<LocationRequestResult> {
-  const { company } = await requireMembership();
+  const { company } = await requireLogistics();
   const parsedId = z.string().uuid().safeParse(orderId);
   if (!parsedId.success) return { kind: "error", error: "Unknown order" };
 
@@ -306,7 +306,7 @@ export type DriverLinkResult = { kind: "link"; waUrl: string } | { kind: "error"
  * send it to them. Any older link for this driver stops working.
  */
 export async function createDriverLink(driverId: string): Promise<DriverLinkResult> {
-  const { company } = await requireMembership();
+  const { company } = await requireLogistics();
   const id = z.string().uuid().safeParse(driverId);
   if (!id.success) return { kind: "error", error: "Unknown driver" };
 
@@ -350,7 +350,7 @@ export async function createDriverLink(driverId: string): Promise<DriverLinkResu
 }
 
 export async function revokeDriverLinks(formData: FormData) {
-  const { company } = await requireMembership();
+  const { company } = await requireLogistics();
   const driverId = z.string().uuid().parse(formData.get("driver_id"));
   const supabase = await createClient();
   const { error } = await supabase

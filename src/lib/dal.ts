@@ -35,7 +35,7 @@ export const getMembership = cache(async (): Promise<Membership | null> => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("company_members")
-    .select("role, company:companies(id, name, phone, city)")
+    .select("role, company:companies(id, name, phone, city, is_logistics, is_vendor)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: true })
     .limit(1)
@@ -53,4 +53,21 @@ export const requireMembership = cache(async (): Promise<Membership> => {
   const membership = await getMembership();
   if (!membership) redirect("/onboarding");
   return membership;
+});
+
+/** Where a signed-in user with a company should land. */
+export function homeFor(company: Company) {
+  return company.is_logistics ? "/dashboard" : "/vendor";
+}
+
+/** Delivery pages: logistics companies only. */
+export const requireLogistics = cache(async (): Promise<Membership> => {
+  const membership = await requireMembership();
+  if (!membership.company.is_logistics) redirect("/vendor");
+  return membership;
+});
+
+/** Vehicle-rental pages. */
+export const requireVendorAccess = cache(async (): Promise<Membership> => {
+  return requireMembership();
 });
