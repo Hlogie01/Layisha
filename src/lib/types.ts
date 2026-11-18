@@ -45,7 +45,22 @@ export interface OrderRow {
   delivery_date: string;
   notes: string | null;
   driver_id: string | null;
+  otp_code: string | null;
+  failure_reason: string | null;
   customer: Customer | null;
+  pod?: ProofOfDelivery | null;
+}
+
+export interface ProofOfDelivery {
+  outcome: "delivered" | "failed";
+  photo_url: string | null;
+  otp_verified: boolean;
+  no_otp_reason: string | null;
+  recipient_name: string | null;
+  failure_reason: string | null;
+  captured_at: string;
+  lat: number | null;
+  lng: number | null;
 }
 
 export const ORDER_STATUSES: { value: OrderStatus; label: string }[] = [

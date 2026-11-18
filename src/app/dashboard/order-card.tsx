@@ -11,6 +11,49 @@ import {
   type LocationRequestResult,
 } from "./actions";
 
+function ProofSummary({ order }: { order: OrderRow }) {
+  const p = order.pod!;
+  const time = new Intl.DateTimeFormat("en-ZA", { hour: "2-digit", minute: "2-digit" }).format(
+    new Date(p.captured_at),
+  );
+  return (
+    <div
+      className={cx(
+        "mt-3 space-y-2 rounded-lg px-3 py-2 text-sm",
+        p.outcome === "delivered" ? "bg-emerald-50 text-emerald-900" : "bg-red-50 text-red-900",
+      )}
+    >
+      <p className="font-semibold">
+        {p.outcome === "delivered" ? `Delivered at ${time}` : `Failed at ${time}: ${p.failure_reason ?? ""}`}
+      </p>
+      {p.outcome === "delivered" ? (
+        <p>
+          {p.otp_verified ? "PIN checked ✓" : `No PIN: ${p.no_otp_reason ?? "not given"}`}
+          {p.recipient_name ? ` · Received by ${p.recipient_name}` : ""}
+        </p>
+      ) : null}
+      <div className="flex items-center gap-3">
+        {p.photo_url ? (
+          <a href={p.photo_url} target="_blank" rel="noreferrer">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={p.photo_url} alt="Proof of delivery" className="h-16 w-16 rounded-md object-cover" />
+          </a>
+        ) : null}
+        {p.lat != null && p.lng != null ? (
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`}
+            target="_blank"
+            rel="noreferrer"
+            className="font-semibold underline"
+          >
+            Where it was recorded
+          </a>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function LocationStatus({ order }: { order: OrderRow }) {
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<LocationRequestResult | null>(null);
@@ -133,12 +176,26 @@ export function OrderCard({ order, drivers }: { order: OrderRow; drivers: Driver
       {order.customer?.address_text ? (
         <p className="mt-1 text-sm text-stone-500">{order.customer.address_text}</p>
       ) : null}
-      <LocationStatus order={order} />
+      {order.pod ? <ProofSummary order={order} /> : <LocationStatus order={order} />}
 
       <p className="mt-3 text-sm">
         <span className="font-semibold">{formatRand(Number(order.amount_due))}</span>{" "}
         <span className="text-stone-500">· {paymentLabel[order.payment_type]}</span>
       </p>
+
+      {order.customer && order.otp_code && order.status !== "delivered" && order.status !== "cancelled" ? (
+        <a
+          href={`https://wa.me/${order.customer.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(
+            `Hi ${order.customer.name.split(" ")[0]}, your delivery PIN for order ${order.reference} is ${order.otp_code}. ` +
+              "Give it to the driver only when you have received your order.",
+          )}`}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-3 inline-flex text-sm font-semibold text-brand-700 hover:underline"
+        >
+          Send delivery PIN on WhatsApp
+        </a>
+      ) : null}
 
       <div className="mt-4 grid grid-cols-2 gap-2">
         <label className="text-xs font-medium text-stone-500">

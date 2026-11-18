@@ -12,6 +12,8 @@ Logistics companies sign up and run their daily operations here. Later, vehicle 
 - Create orders (customer, WhatsApp number, items, amount, payment type, delivery date)
 - Dispatch board: pick a day, see orders grouped by driver, assign drivers and change status
 - Daily totals: orders, delivered, failed and cash to collect
+- **Driver app** (works offline): send each driver a personal link on WhatsApp from the Drivers page. They see today's stops in order, navigate with Google Maps, call or WhatsApp the customer, and record each delivery
+- **Proof of delivery:** photo, GPS position, time and the customer's 4-digit PIN (sent to the customer with "Send delivery PIN on WhatsApp"). Failed deliveries need a reason. Cash, EFT or card collected is recorded. With no signal, everything is saved on the phone and uploads automatically later
 - **WhatsApp location confirmation:** tap "Ask for location" on an order, and the customer gets a private link on WhatsApp. They share their GPS pin and a landmark note without installing anything, and the order shows "Location confirmed · Open map"
 - Every business only sees its own data (enforced in the database with row-level security)
 
@@ -26,9 +28,9 @@ Logistics companies sign up and run their daily operations here. Later, vehicle 
 You need Node.js 20 or newer and a free Supabase project.
 
 1. **Create a Supabase project** at [supabase.com](https://supabase.com).
-2. **Set up the database.** In the Supabase dashboard, open **SQL Editor** and run each file in `supabase/migrations/` in order (`0001_init.sql`, then `0002_location_requests.sql`). Paste the contents and click **Run**.
+2. **Set up the database.** In the Supabase dashboard, open **SQL Editor** and run each file in `supabase/migrations/` in order (`0001_init.sql`, `0002_location_requests.sql`, then `0003_driver_app.sql`). Paste the contents and click **Run**.
 3. **For quick testing, turn off email confirmation:** **Authentication → Sign In / Providers → Email**, switch off "Confirm email". Switch it back on before going live.
-4. **Add your keys.** Copy `.env.example` to `.env.local` and fill in the values from **Project Settings → API**.
+4. **Add your keys.** Copy `.env.example` to `.env.local` and fill in the values from **Project Settings → API**. The `service_role` key is needed for delivery photos; keep it secret.
 5. **Install and start:**
 
    ```bash
@@ -49,6 +51,9 @@ src/app/login/         Log in and sign up
 src/app/onboarding/    Create your business
 src/app/dashboard/     Dispatch board, new order, drivers
 src/app/c/[token]/     Public page where customers confirm their location
+src/app/d/             Driver app (offline-first, installable)
+src/app/api/driver/    Driver app API: today's stops, record delivery outcome
+public/sw.js           Service worker that keeps the driver app on the phone
 src/lib/whatsapp.ts    WhatsApp sending (Cloud API or tap-to-send links)
 ```
 
@@ -60,10 +65,16 @@ To send automatically instead, set up the [WhatsApp Business Platform (Cloud API
 
 Customer location links expire after 7 days and only work for that one customer. When testing on your phone, the app must be reachable from the internet (deploy it, or use a tunnel), because `localhost` links won't open on the customer's phone.
 
+## Driver app
+
+1. On **Drivers**, tap **Send app link** next to a driver and send the WhatsApp message.
+2. The driver opens the link on their phone. It signs them in on that phone only (no password). They can tap **Add to Home screen**.
+3. Sending a new link, deactivating the driver, or tapping **Switch off app** stops the old link working.
+
+When a delivery is saved with signal, a wrong PIN is caught straight away. With no signal, the delivery is saved on the phone and checked when it uploads; if it's rejected then, the driver sees a message to phone the dispatcher.
+
 ## Next up (from the MVP spec)
 
-1. Driver app with offline mode
-2. Proof of delivery (photo, GPS, one-time PIN)
-3. Cash and payment ledger with end-of-shift reconciliation
-4. Live tracking and automatic WhatsApp updates
-5. Bulk order import (CSV)
+1. Cash and payment ledger with end-of-shift reconciliation
+2. Live tracking and automatic WhatsApp updates
+3. Bulk order import (CSV)
