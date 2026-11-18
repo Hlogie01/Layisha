@@ -1,6 +1,6 @@
 "use server";
 
-import { randomBytes, randomInt } from "node:crypto";
+import { createHash, randomBytes, randomInt } from "node:crypto";
 import { refresh } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -293,4 +293,72 @@ export async function requestCustomerLocation(orderId: string): Promise<Location
       }),
     ),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Driver app links
+// ---------------------------------------------------------------------------
+
+export type DriverLinkResult = { kind: "link"; waUrl: string } | { kind: "error"; error: string };
+
+/**
+ * Creates a new personal app link for a driver and returns a WhatsApp link to
+ * send it to them. Any older link for this driver stops working.
+ */
+export async function createDriverLink(driverId: string): Promise<DriverLinkResult> {
+  const { company } = await requireMembership();
+  const id = z.string().uuid().safeParse(driverId);
+  if (!id.success) return { kind: "error", error: "Unknown driver" };
+
+  const supabase = await createClient();
+  const { data: driver, error } = await supabase
+    .from("drivers")
+    .select("id, name, phone, active")
+    .eq("id", id.data)
+    .eq("company_id", company.id)
+    .maybeSingle();
+  if (error || !driver) return { kind: "error", error: "Driver not found" };
+  if (!driver.active) return { kind: "error", error: "Reactivate this driver first" };
+
+  const now = new Date().toISOString();
+  const { error: revokeError } = await supabase
+    .from("driver_access_tokens")
+    .update({ revoked_at: now })
+    .eq("driver_id", driver.id)
+    .is("revoked_at", null);
+  if (revokeError) return { kind: "error", error: revokeError.message };
+
+  const secret = randomBytes(32).toString("base64url");
+  const tokenHash = createHash("sha256").update(secret).digest("hex");
+  const { data: userData } = await supabase.auth.getUser();
+  const { error: insertError } = await supabase.from("driver_access_tokens").insert({
+    token_hash: tokenHash,
+    driver_id: driver.id,
+    company_id: company.id,
+    created_by: userData.user?.id ?? null,
+  });
+  if (insertError) return { kind: "error", error: insertError.message };
+
+  const link = `${await appOrigin()}/driver/start/${secret}`;
+  const firstName = driver.name.split(" ")[0];
+  const message =
+    `Hi ${firstName}, here is your Layisha driver app for ${company.name}. ` +
+    `Open this link on your phone to see your stops and record deliveries:\n${link}\n\n` +
+    `Tip: after it opens, choose "Add to Home screen". Please don't share this link.`;
+  refresh();
+  return { kind: "link", waUrl: waMeLink(driver.phone, message) };
+}
+
+export async function revokeDriverLinks(formData: FormData) {
+  const { company } = await requireMembership();
+  const driverId = z.string().uuid().parse(formData.get("driver_id"));
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("driver_access_tokens")
+    .update({ revoked_at: new Date().toISOString() })
+    .eq("driver_id", driverId)
+    .eq("company_id", company.id)
+    .is("revoked_at", null);
+  if (error) throw new Error(error.message);
+  refresh();
 }

@@ -4,7 +4,8 @@ import { Suspense } from "react";
 import { requireMembership } from "@/lib/dal";
 import { formatRand } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
-import type { Driver, OrderRow } from "@/lib/types";
+import { createAdminClient, POD_BUCKET } from "@/lib/supabase/admin";
+import type { Driver, OrderRow, ProofOfDelivery } from "@/lib/types";
 import { DatePicker } from "./date-picker";
 import { OrderCard } from "./order-card";
 
@@ -13,6 +14,56 @@ export const metadata: Metadata = { title: "Dispatch" };
 function todayInSa() {
   // en-CA gives YYYY-MM-DD.
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Johannesburg" }).format(new Date());
+}
+
+/** Adds the latest proof of delivery (with a short-lived photo link) to finished orders. */
+async function attachProofs(orders: OrderRow[]) {
+  const finished = orders.filter((o) => o.status === "delivered" || o.status === "failed");
+  if (finished.length === 0) return;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("proofs_of_delivery")
+    .select(
+      "order_id, outcome, photo_path, otp_verified, no_otp_reason, recipient_name, failure_reason, captured_at, lat, lng",
+    )
+    .in(
+      "order_id",
+      finished.map((o) => o.id),
+    )
+    .order("captured_at", { ascending: false });
+  if (error || !data) return;
+
+  // Photos are private; make 1-hour links. Skipped if the service key isn't set.
+  const urls = new Map<string, string>();
+  const paths = data.map((p) => p.photo_path).filter((p): p is string => Boolean(p));
+  if (paths.length) {
+    try {
+      const { data: signed } = await createAdminClient()
+        .storage.from(POD_BUCKET)
+        .createSignedUrls(paths, 60 * 60);
+      for (const s of signed ?? []) if (s.path && s.signedUrl) urls.set(s.path, s.signedUrl);
+    } catch {
+      // No service key configured: show the proof without the photo.
+    }
+  }
+
+  const latest = new Map<string, ProofOfDelivery>();
+  for (const p of data) {
+    if (latest.has(p.order_id)) continue;
+    latest.set(p.order_id, {
+      outcome: p.outcome,
+      photo_url: p.photo_path ? (urls.get(p.photo_path) ?? null) : null,
+      otp_verified: p.otp_verified,
+      no_otp_reason: p.no_otp_reason,
+      recipient_name: p.recipient_name,
+      failure_reason: p.failure_reason,
+      captured_at: p.captured_at,
+      lat: p.lat,
+      lng: p.lng,
+    });
+  }
+  for (const o of orders) o.pod = latest.get(o.id) ?? null;
 }
 
 async function Board({ searchParams }: { searchParams: PageProps<"/dashboard">["searchParams"] }) {
@@ -26,7 +77,7 @@ async function Board({ searchParams }: { searchParams: PageProps<"/dashboard">["
     supabase
       .from("orders")
       .select(
-        "id, reference, items, amount_due, payment_type, status, delivery_date, notes, driver_id, customer:customers(id, name, whatsapp, address_text, lat, lng, landmark_note, location_confirmed_at)",
+        "id, reference, items, amount_due, payment_type, status, delivery_date, notes, driver_id, otp_code, failure_reason, customer:customers(id, name, whatsapp, address_text, lat, lng, landmark_note, location_confirmed_at)",
       )
       .eq("company_id", company.id)
       .eq("delivery_date", date)
@@ -47,6 +98,7 @@ async function Board({ searchParams }: { searchParams: PageProps<"/dashboard">["
     customer: Array.isArray(o.customer) ? (o.customer[0] ?? null) : o.customer,
   })) as OrderRow[];
   const drivers = (driversRes.data ?? []) as Driver[];
+  await attachProofs(orders);
 
   const delivered = orders.filter((o) => o.status === "delivered");
   const failed = orders.filter((o) => o.status === "failed");
