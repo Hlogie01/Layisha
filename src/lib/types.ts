@@ -58,6 +58,7 @@ export interface OrderRow {
   notes: string | null;
   driver_id: string | null;
   otp_code: string | null;
+  otp_locked_at: string | null;
   failure_reason: string | null;
   customer: Customer | null;
   pod?: ProofOfDelivery | null;

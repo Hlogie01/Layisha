@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { userMessage } from "@/lib/errors";
 import { getMembership, homeFor, requireUser } from "@/lib/dal";
 import { normaliseSaPhone } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
@@ -66,7 +67,7 @@ export async function createCompany(
     p_is_logistics: isLogistics,
     p_is_vendor: isVendor,
   });
-  if (error) return { error: `Could not create your account: ${error.message}` };
+  if (error) return { error: userMessage(error, "Could not create your account. Please try again.") };
 
   if (isVendor) {
     const { error: profileError } = await supabase.from("vendor_profiles").insert({
@@ -75,7 +76,7 @@ export async function createCompany(
       vehicle_types: d.vehicle_types ?? [],
       fleet_size: d.fleet_size ?? null,
     });
-    if (profileError) return { error: `Could not save your vehicle details: ${profileError.message}` };
+    if (profileError) return { error: userMessage(profileError, "Could not save your vehicle details. Please try again.") };
   }
 
   redirect(isLogistics ? "/dashboard" : "/vendor");

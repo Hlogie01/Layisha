@@ -7,9 +7,43 @@ import { ORDER_STATUSES, type Driver, type OrderRow, type OrderStatus } from "@/
 import {
   assignDriver,
   requestCustomerLocation,
+  resetOrderPin,
   updateOrderStatus,
   type LocationRequestResult,
+  type PinResetResult,
 } from "./actions";
+
+function PinLocked({ orderId }: { orderId: string }) {
+  const [pending, startTransition] = useTransition();
+  const [result, setResult] = useState<PinResetResult | null>(null);
+  return (
+    <div className="mt-3 space-y-2 rounded-lg bg-signal-soft px-3 py-2 text-sm text-signal">
+      <p className="font-semibold">PIN locked after 5 wrong tries</p>
+      {result?.kind === "link" ? (
+        <a
+          href={result.waUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex rounded-lg bg-[#25D366] px-3 py-1.5 text-sm font-semibold text-ink hover:opacity-90"
+        >
+          Send new PIN on WhatsApp
+        </a>
+      ) : (
+        <>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => startTransition(async () => setResult(await resetOrderPin(orderId)))}
+            className="rounded-lg border border-signal bg-white px-3 py-1.5 font-semibold text-signal disabled:opacity-60"
+          >
+            {pending ? "Creating…" : "Create a new PIN"}
+          </button>
+          {result?.kind === "error" ? <p>{result.error}</p> : null}
+        </>
+      )}
+    </div>
+  );
+}
 
 function ProofSummary({ order }: { order: OrderRow }) {
   const p = order.pod!;
@@ -183,7 +217,9 @@ export function OrderCard({ order, drivers }: { order: OrderRow; drivers: Driver
         <span className="text-kerb">· {paymentLabel[order.payment_type]}</span>
       </p>
 
-      {order.customer && order.otp_code && order.status !== "delivered" && order.status !== "cancelled" ? (
+      {order.otp_locked_at && order.status !== "delivered" && order.status !== "cancelled" ? (
+        <PinLocked orderId={order.id} />
+      ) : order.customer && order.otp_code && order.status !== "delivered" && order.status !== "cancelled" ? (
         <a
           href={`https://wa.me/${order.customer.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(
             `Hi ${order.customer.name.split(" ")[0]}, your delivery PIN for order ${order.reference} is ${order.otp_code}. ` +

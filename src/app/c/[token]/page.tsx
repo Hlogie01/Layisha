@@ -76,7 +76,10 @@ export default function ConfirmLocationPage({ params }: PageProps<"/c/[token]">)
           </Suspense>
         </Card>
         <p className="text-center text-xs text-kerb">
-          Your location is only shared with the business delivering to you.
+          Your location is only shared with the business delivering to you.{" "}
+          <a href="/privacy" className="underline">
+            Privacy notice
+          </a>
         </p>
       </div>
     </main>

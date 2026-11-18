@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { DRIVER_COOKIE, DRIVER_COOKIE_MAX_AGE, whoami } from "@/lib/driver-session";
+import { allow, clientIp } from "@/lib/rate-limit";
 
 /**
  * Opened from the link the owner sends on WhatsApp. Saves the driver's secret
@@ -10,7 +11,8 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/driver/start
   const target = request.nextUrl.clone();
   target.search = "";
 
-  const me = token.length >= 32 ? await whoami(token).catch(() => null) : null;
+  const permitted = await allow(`driver-start:ip:${await clientIp()}`, 20, 600);
+  const me = permitted && token.length >= 32 ? await whoami(token).catch(() => null) : null;
   if (!me) {
     target.pathname = "/d";
     target.searchParams.set("invalid", "1");

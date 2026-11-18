@@ -5,7 +5,10 @@ import { refresh } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { userMessage } from "@/lib/errors";
 import { requireLogistics } from "@/lib/dal";
+import { allow, TOO_MANY } from "@/lib/rate-limit";
+import { createAdminClient, POD_BUCKET } from "@/lib/supabase/admin";
 import { normaliseSaPhone } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
 import { ORDER_STATUSES, PAYMENT_TYPES } from "@/lib/types";
@@ -50,7 +53,7 @@ export async function addDriver(_prev: FormState, formData: FormData): Promise<F
     phone,
     vehicle: parsed.data.vehicle ?? null,
   });
-  if (error) return { error: `Could not add driver: ${error.message}` };
+  if (error) return { error: userMessage(error, "Could not add driver. Please try again.") };
 
   refresh();
   return { ok: `${parsed.data.name} added.` };
@@ -89,6 +92,7 @@ const orderSchema = z.object({
 
 export async function createOrder(_prev: FormState, formData: FormData): Promise<FormState> {
   const { company } = await requireLogistics();
+  if (!(await allow(`create-order:${company.id}`, 600, 3600))) return { error: TOO_MANY };
   const parsed = orderSchema.safeParse({
     customer_name: formData.get("customer_name"),
     customer_whatsapp: formData.get("customer_whatsapp"),
@@ -118,7 +122,7 @@ export async function createOrder(_prev: FormState, formData: FormData): Promise
     .eq("company_id", company.id)
     .eq("whatsapp", whatsapp)
     .maybeSingle();
-  if (findError) return { error: `Could not look up customer: ${findError.message}` };
+  if (findError) return { error: userMessage(findError, "Could not look up customer. Please try again.") };
 
   let customerId = existing?.id as string | undefined;
   if (customerId) {
@@ -136,14 +140,14 @@ export async function createOrder(_prev: FormState, formData: FormData): Promise
       })
       .select("id")
       .single();
-    if (error) return { error: `Could not save customer: ${error.message}` };
+    if (error) return { error: userMessage(error, "Could not save customer. Please try again.") };
     customerId = created.id;
   }
 
   const { data: reference, error: refError } = await supabase.rpc("next_order_reference", {
     cid: company.id,
   });
-  if (refError) return { error: `Could not create order number: ${refError.message}` };
+  if (refError) return { error: userMessage(refError, "Could not create order number. Please try again.") };
 
   const { error: orderError } = await supabase.from("orders").insert({
     company_id: company.id,
@@ -157,7 +161,7 @@ export async function createOrder(_prev: FormState, formData: FormData): Promise
     notes: d.notes ?? null,
     otp_code: String(randomInt(0, 10_000)).padStart(4, "0"),
   });
-  if (orderError) return { error: `Could not save order: ${orderError.message}` };
+  if (orderError) return { error: userMessage(orderError, "Could not save order. Please try again.") };
 
   if (formData.get("next") === "another") {
     refresh();
@@ -226,6 +230,7 @@ async function appOrigin() {
  */
 export async function requestCustomerLocation(orderId: string): Promise<LocationRequestResult> {
   const { company } = await requireLogistics();
+  if (!(await allow(`location-link:${company.id}`, 300, 3600))) return { kind: "error", error: TOO_MANY };
   const parsedId = z.string().uuid().safeParse(orderId);
   if (!parsedId.success) return { kind: "error", error: "Unknown order" };
 
@@ -246,13 +251,13 @@ export async function requestCustomerLocation(orderId: string): Promise<Location
   const token = randomBytes(24).toString("base64url"); // 32 characters
   const { data: userData } = await supabase.auth.getUser();
   const { error: insertError } = await supabase.from("location_requests").insert({
-    token,
+    token_hash: createHash("sha256").update(token).digest("hex"),
     company_id: company.id,
     customer_id: customer.id,
     order_id: order.id,
     created_by: userData.user?.id ?? null,
   });
-  if (insertError) return { kind: "error", error: `Could not create link: ${insertError.message}` };
+  if (insertError) return { kind: "error", error: userMessage(insertError, "Could not create link. Please try again.") };
 
   const link = `${await appOrigin()}/c/${token}`;
   const firstName = customer.name.split(" ")[0];
@@ -307,6 +312,7 @@ export type DriverLinkResult = { kind: "link"; waUrl: string } | { kind: "error"
  */
 export async function createDriverLink(driverId: string): Promise<DriverLinkResult> {
   const { company } = await requireLogistics();
+  if (!(await allow(`driver-link:${company.id}`, 30, 3600))) return { kind: "error", error: TOO_MANY };
   const id = z.string().uuid().safeParse(driverId);
   if (!id.success) return { kind: "error", error: "Unknown driver" };
 
@@ -326,7 +332,7 @@ export async function createDriverLink(driverId: string): Promise<DriverLinkResu
     .update({ revoked_at: now })
     .eq("driver_id", driver.id)
     .is("revoked_at", null);
-  if (revokeError) return { kind: "error", error: revokeError.message };
+  if (revokeError) return { kind: "error", error: userMessage(revokeError, "Something went wrong. Please try again.") };
 
   const secret = randomBytes(32).toString("base64url");
   const tokenHash = createHash("sha256").update(secret).digest("hex");
@@ -337,7 +343,7 @@ export async function createDriverLink(driverId: string): Promise<DriverLinkResu
     company_id: company.id,
     created_by: userData.user?.id ?? null,
   });
-  if (insertError) return { kind: "error", error: insertError.message };
+  if (insertError) return { kind: "error", error: userMessage(insertError, "Something went wrong. Please try again.") };
 
   const link = `${await appOrigin()}/driver/start/${secret}`;
   const firstName = driver.name.split(" ")[0];
@@ -360,5 +366,75 @@ export async function revokeDriverLinks(formData: FormData) {
     .eq("company_id", company.id)
     .is("revoked_at", null);
   if (error) throw new Error(error.message);
+  refresh();
+}
+
+// ---------------------------------------------------------------------------
+// Delivery PIN reset (after 5 wrong tries the PIN locks)
+// ---------------------------------------------------------------------------
+
+export type PinResetResult = { kind: "link"; waUrl: string } | { kind: "error"; error: string };
+
+export async function resetOrderPin(orderId: string): Promise<PinResetResult> {
+  const { company } = await requireLogistics();
+  const id = z.string().uuid().safeParse(orderId);
+  if (!id.success) return { kind: "error", error: "Unknown order" };
+
+  const supabase = await createClient();
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("id, reference, status, customer:customers(name, whatsapp)")
+    .eq("id", id.data)
+    .eq("company_id", company.id)
+    .maybeSingle();
+  if (error || !order) return { kind: "error", error: "Order not found" };
+  if (order.status === "delivered" || order.status === "cancelled") {
+    return { kind: "error", error: "This order is already closed" };
+  }
+  const customer = (Array.isArray(order.customer) ? order.customer[0] : order.customer) as
+    | { name: string; whatsapp: string }
+    | null;
+  if (!customer) return { kind: "error", error: "This order has no customer" };
+
+  const pin = String(randomInt(0, 10_000)).padStart(4, "0");
+  const { error: updateError } = await supabase
+    .from("orders")
+    .update({ otp_code: pin, otp_attempts: 0, otp_locked_at: null })
+    .eq("id", order.id)
+    .eq("company_id", company.id);
+  if (updateError) return { kind: "error", error: userMessage(updateError, "Could not reset the PIN") };
+
+  refresh();
+  return {
+    kind: "link",
+    waUrl: waMeLink(
+      customer.whatsapp,
+      `Hi ${customer.name.split(" ")[0]}, your new delivery PIN for order ${order.reference} is ${pin}. ` +
+        "Give it to the driver only when you have received your order.",
+    ),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// POPIA: remove a customer's personal details on request (owner only)
+// ---------------------------------------------------------------------------
+
+export async function forgetCustomer(formData: FormData) {
+  const { role } = await requireLogistics();
+  if (role !== "owner") throw new Error("Only the account owner can remove customer details.");
+  const customerId = z.string().uuid().parse(formData.get("customer_id"));
+
+  const supabase = await createClient();
+  const { data: paths, error } = await supabase.rpc("forget_customer", { p_customer_id: customerId });
+  if (error) throw new Error(userMessage(error, "Could not remove the customer's details"));
+
+  const photoPaths = (paths ?? []) as string[];
+  if (photoPaths.length) {
+    try {
+      await createAdminClient().storage.from(POD_BUCKET).remove(photoPaths);
+    } catch (e) {
+      console.error("[forget-customer] photo removal failed", e);
+    }
+  }
   refresh();
 }

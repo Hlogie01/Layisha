@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { allow, clientIp, TOO_MANY } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 
 export interface ConfirmState {
@@ -31,6 +32,14 @@ export async function confirmLocation(
   });
   if (!parsed.success) {
     return { status: "error", message: "Please share your location first." };
+  }
+
+  const ip = await clientIp();
+  if (
+    !(await allow(`confirm:ip:${ip}`, 30, 600)) ||
+    !(await allow(`confirm:token:${parsed.data.token.slice(0, 12)}`, 10, 3600))
+  ) {
+    return { status: "error", message: TOO_MANY };
   }
 
   const supabase = await createClient();
