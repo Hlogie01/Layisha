@@ -29,6 +29,9 @@ export interface Customer {
   name: string;
   whatsapp: string;
   address_text: string | null;
+  lat: number | null;
+  lng: number | null;
+  landmark_note: string | null;
   location_confirmed_at: string | null;
 }
 

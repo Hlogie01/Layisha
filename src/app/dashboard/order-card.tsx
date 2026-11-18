@@ -1,10 +1,73 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { cx } from "@/components/ui";
 import { formatRand, formatSaPhone } from "@/lib/phone";
 import { ORDER_STATUSES, type Driver, type OrderRow, type OrderStatus } from "@/lib/types";
-import { assignDriver, updateOrderStatus } from "./actions";
+import {
+  assignDriver,
+  requestCustomerLocation,
+  updateOrderStatus,
+  type LocationRequestResult,
+} from "./actions";
+
+function LocationStatus({ order }: { order: OrderRow }) {
+  const [pending, startTransition] = useTransition();
+  const [result, setResult] = useState<LocationRequestResult | null>(null);
+  const c = order.customer;
+  if (!c) return null;
+
+  if (c.location_confirmed_at && c.lat != null && c.lng != null) {
+    return (
+      <div className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm">
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}`}
+          target="_blank"
+          rel="noreferrer"
+          className="font-semibold text-emerald-800 hover:underline"
+        >
+          📍 Location confirmed · Open map
+        </a>
+        {c.landmark_note ? <p className="mt-0.5 text-emerald-900">{c.landmark_note}</p> : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-2 space-y-1.5">
+      <p className="text-xs font-medium text-amber-700">Location not confirmed yet</p>
+      {result?.kind === "link" ? (
+        <div className="space-y-1">
+          {result.note ? <p className="text-xs text-red-600">{result.note}</p> : null}
+          <a
+            href={result.waUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex rounded-lg bg-[#25D366] px-3 py-1.5 text-sm font-semibold text-white hover:opacity-90"
+          >
+            Open WhatsApp to send
+          </a>
+        </div>
+      ) : result?.kind === "sent" ? (
+        <p className="text-sm font-medium text-emerald-700">Sent on WhatsApp ✓</p>
+      ) : (
+        <>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() =>
+              startTransition(async () => setResult(await requestCustomerLocation(order.id)))
+            }
+            className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm font-semibold text-stone-700 hover:bg-stone-100 disabled:opacity-60"
+          >
+            {pending ? "Creating link…" : "Ask for location"}
+          </button>
+          {result?.kind === "error" ? <p className="text-xs text-red-600">{result.error}</p> : null}
+        </>
+      )}
+    </div>
+  );
+}
 
 const statusStyles: Record<OrderStatus, string> = {
   new: "bg-stone-100 text-stone-700",
@@ -70,9 +133,7 @@ export function OrderCard({ order, drivers }: { order: OrderRow; drivers: Driver
       {order.customer?.address_text ? (
         <p className="mt-1 text-sm text-stone-500">{order.customer.address_text}</p>
       ) : null}
-      {!order.customer?.location_confirmed_at ? (
-        <p className="mt-2 text-xs font-medium text-amber-700">Location not confirmed yet</p>
-      ) : null}
+      <LocationStatus order={order} />
 
       <p className="mt-3 text-sm">
         <span className="font-semibold">{formatRand(Number(order.amount_due))}</span>{" "}

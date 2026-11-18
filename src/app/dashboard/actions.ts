@@ -1,13 +1,20 @@
 "use server";
 
-import { randomInt } from "node:crypto";
+import { randomBytes, randomInt } from "node:crypto";
 import { refresh } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireMembership } from "@/lib/dal";
 import { normaliseSaPhone } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
 import { ORDER_STATUSES, PAYMENT_TYPES } from "@/lib/types";
+import {
+  locationRequestMessage,
+  sendLocationRequestTemplate,
+  waMeLink,
+  whatsappApiConfigured,
+} from "@/lib/whatsapp";
 
 export interface FormState {
   error?: string;
@@ -193,4 +200,97 @@ export async function updateOrderStatus(formData: FormData) {
     .eq("company_id", company.id);
   if (error) throw new Error(`Could not update order: ${error.message}`);
   refresh();
+}
+
+// ---------------------------------------------------------------------------
+// Customer location confirmation
+// ---------------------------------------------------------------------------
+
+export type LocationRequestResult =
+  | { kind: "sent" }
+  | { kind: "link"; waUrl: string; note?: string }
+  | { kind: "error"; error: string };
+
+async function appOrigin() {
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
+}
+
+/**
+ * Creates a private link for the customer to confirm their location, then
+ * sends it by WhatsApp (automatically if the WhatsApp API is set up, otherwise
+ * returns a wa.me link for the dispatcher to tap and send).
+ */
+export async function requestCustomerLocation(orderId: string): Promise<LocationRequestResult> {
+  const { company } = await requireMembership();
+  const parsedId = z.string().uuid().safeParse(orderId);
+  if (!parsedId.success) return { kind: "error", error: "Unknown order" };
+
+  const supabase = await createClient();
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("id, reference, customer:customers(id, name, whatsapp)")
+    .eq("id", parsedId.data)
+    .eq("company_id", company.id)
+    .maybeSingle();
+  if (error || !order) return { kind: "error", error: "Order not found" };
+
+  const customer = (Array.isArray(order.customer) ? order.customer[0] : order.customer) as
+    | { id: string; name: string; whatsapp: string }
+    | null;
+  if (!customer) return { kind: "error", error: "This order has no customer" };
+
+  const token = randomBytes(24).toString("base64url"); // 32 characters
+  const { data: userData } = await supabase.auth.getUser();
+  const { error: insertError } = await supabase.from("location_requests").insert({
+    token,
+    company_id: company.id,
+    customer_id: customer.id,
+    order_id: order.id,
+    created_by: userData.user?.id ?? null,
+  });
+  if (insertError) return { kind: "error", error: `Could not create link: ${insertError.message}` };
+
+  const link = `${await appOrigin()}/c/${token}`;
+  const firstName = customer.name.split(" ")[0];
+
+  if (whatsappApiConfigured()) {
+    const sent = await sendLocationRequestTemplate({
+      toE164: customer.whatsapp,
+      customerFirstName: firstName,
+      businessName: company.name,
+      link,
+    });
+    if (sent.ok) return { kind: "sent" };
+    // Fall back to manual sending so the dispatcher is never stuck.
+    return {
+      kind: "link",
+      waUrl: waMeLink(
+        customer.whatsapp,
+        locationRequestMessage({
+          customerFirstName: firstName,
+          businessName: company.name,
+          orderReference: order.reference,
+          link,
+        }),
+      ),
+      note: "Automatic sending failed, so send it yourself.",
+    };
+  }
+
+  return {
+    kind: "link",
+    waUrl: waMeLink(
+      customer.whatsapp,
+      locationRequestMessage({
+        customerFirstName: firstName,
+        businessName: company.name,
+        orderReference: order.reference,
+        link,
+      }),
+    ),
+  };
 }
