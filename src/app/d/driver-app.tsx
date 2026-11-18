@@ -520,7 +520,9 @@ function OutcomeForm({
     if (result === "rejected") {
       setSaving(false);
       return setError(
-        sendError === "Wrong PIN" ? "That PIN is wrong. Check it with the customer and try again." : (sendError ?? "Not accepted"),
+        sendError?.startsWith("Wrong PIN")
+          ? `${sendError} Check it with the customer and try again.`
+          : (sendError ?? "Not accepted"),
       );
     }
     // Offline (or link problem): keep it on the phone and upload later.

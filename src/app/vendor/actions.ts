@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { userMessage } from "@/lib/errors";
 import { requireVendorAccess } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { VEHICLE_TYPES } from "@/lib/types";
@@ -36,7 +37,7 @@ export async function enableVendor(_prev: VendorState, formData: FormData): Prom
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("enable_company_role", { cid: company.id, p_role: "vendor" });
-  if (error) return { error: error.message };
+  if (error) return { error: userMessage(error, "Something went wrong. Please try again.") };
 
   const { error: profileError } = await supabase.from("vendor_profiles").upsert({
     company_id: company.id,
@@ -44,7 +45,7 @@ export async function enableVendor(_prev: VendorState, formData: FormData): Prom
     fleet_size: parsed.data.fleet_size,
     service_area: parsed.data.service_area ?? company.city,
   });
-  if (profileError) return { error: profileError.message };
+  if (profileError) return { error: userMessage(profileError, "Something went wrong. Please try again.") };
 
   redirect("/vendor");
 }
@@ -63,7 +64,7 @@ export async function updateVendorProfile(_prev: VendorState, formData: FormData
     fleet_size: parsed.data.fleet_size,
     service_area: parsed.data.service_area ?? null,
   });
-  if (error) return { error: error.message };
+  if (error) return { error: userMessage(error, "Something went wrong. Please try again.") };
   return { ok: "Saved." };
 }
 

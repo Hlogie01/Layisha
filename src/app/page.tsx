@@ -73,6 +73,11 @@ export default function Home() {
           ))}
         </div>
       </section>
+      <footer className="mx-auto w-full max-w-5xl px-4 pb-10 text-sm text-kerb">
+        <Link href="/privacy" className="underline">
+          Privacy notice
+        </Link>
+      </footer>
     </main>
   );
 }

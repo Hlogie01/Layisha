@@ -97,13 +97,20 @@ export async function sendOne(item: OutboxItem): Promise<{ result: SendResult; e
   if (res.ok) return { result: "sent" };
   if (res.status === 401) return { result: "signed_out" };
   if (res.status === 422 || res.status === 400 || res.status === 413) {
-    const body = (await res.json().catch(() => ({}))) as { error?: string };
-    return {
-      result: "rejected",
-      error: body.error === "wrong_pin" ? "Wrong PIN" : (body.error ?? "Rejected"),
-    };
+    const body = (await res.json().catch(() => ({}))) as { error?: string; attempts_left?: number };
+    let error = body.error ?? "Not accepted";
+    if (body.error === "wrong_pin") {
+      error =
+        typeof body.attempts_left === "number"
+          ? `Wrong PIN. ${body.attempts_left} ${body.attempts_left === 1 ? "try" : "tries"} left.`
+          : "Wrong PIN.";
+    } else if (body.error === "pin_locked") {
+      error =
+        "PIN locked after 5 wrong tries. Ask your dispatcher to send the customer a new PIN, or choose \"Customer can't give a PIN\".";
+    }
+    return { result: "rejected", error };
   }
-  // 5xx and anything else: keep it and try again later.
+  // 429 (slow down), 5xx and anything else: keep it and try again later.
   return { result: "offline" };
 }
 
