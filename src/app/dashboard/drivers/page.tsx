@@ -32,23 +32,23 @@ async function DriverList() {
   const links = new Map((tokens ?? []).map((t) => [t.driver_id as string, t.last_used_at as string | null]));
 
   if (drivers.length === 0) {
-    return <p className="text-sm text-stone-500">No drivers yet. Add your first one.</p>;
+    return <p className="text-sm text-kerb">No drivers yet. Add your first one.</p>;
   }
 
   return (
-    <ul className="divide-y divide-stone-200">
+    <ul className="divide-y divide-line">
       {drivers.map((d) => (
         <li key={d.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
           <div className="min-w-0">
-            <p className={d.active ? "font-semibold" : "font-semibold text-stone-400"}>
+            <p className={d.active ? "font-semibold" : "font-semibold text-kerb"}>
               {d.name}
               {!d.active ? <span className="ml-2 text-xs font-normal">(inactive)</span> : null}
             </p>
-            <p className="text-sm text-stone-500">
+            <p className="text-sm text-kerb">
               {formatSaPhone(d.phone)}
               {d.vehicle ? ` · ${d.vehicle}` : ""}
             </p>
-            <p className="text-xs text-stone-500">
+            <p className="text-xs text-kerb">
               {!links.has(d.id)
                 ? "No app link yet"
                 : links.get(d.id)
@@ -61,7 +61,7 @@ async function DriverList() {
           {links.has(d.id) ? (
             <form action={revokeDriverLinks}>
               <input type="hidden" name="driver_id" value={d.id} />
-              <button className="text-sm font-medium text-stone-500 hover:text-stone-800">
+              <button className="text-sm font-medium text-kerb hover:text-ink">
                 Switch off app
               </button>
             </form>
@@ -69,7 +69,7 @@ async function DriverList() {
           <form action={setDriverActive}>
             <input type="hidden" name="driver_id" value={d.id} />
             <input type="hidden" name="active" value={d.active ? "false" : "true"} />
-            <button className="text-sm font-medium text-stone-500 hover:text-stone-800">
+            <button className="text-sm font-medium text-kerb hover:text-ink">
               {d.active ? "Deactivate" : "Reactivate"}
             </button>
           </form>
@@ -86,7 +86,7 @@ export default function DriversPage() {
       <h1 className="text-2xl font-bold">Drivers</h1>
       <div className="grid gap-4 lg:grid-cols-[1fr_22rem]">
         <Card>
-          <Suspense fallback={<p className="text-sm text-stone-500">Loading drivers…</p>}>
+          <Suspense fallback={<p className="text-sm text-kerb">Loading drivers…</p>}>
             <DriverList />
           </Suspense>
         </Card>

@@ -33,7 +33,7 @@ export function CompanyForm() {
   return (
     <form action={action} className="space-y-5">
       <fieldset className="space-y-2">
-        <legend className="mb-2 text-sm font-medium text-stone-700">
+        <legend className="mb-2 text-sm font-medium text-ink">
           What will you use Layisha for?
         </legend>
         {CHOICES.map((c) => (
@@ -42,8 +42,8 @@ export function CompanyForm() {
             className={cx(
               "flex cursor-pointer gap-3 rounded-lg border p-3 transition",
               account === c.value
-                ? "border-brand-600 bg-brand-50 ring-2 ring-brand-100"
-                : "border-stone-300 hover:bg-stone-50",
+                ? "border-ink bg-hivis-soft ring-2 ring-hivis"
+                : "border-line hover:bg-chalk",
             )}
           >
             <input
@@ -52,11 +52,11 @@ export function CompanyForm() {
               value={c.value}
               checked={account === c.value}
               onChange={() => setAccount(c.value)}
-              className="mt-1 accent-brand-700"
+              className="mt-1 accent-ink"
             />
             <span>
               <span className="block font-semibold">{c.title}</span>
-              <span className="block text-sm text-stone-600">{c.body}</span>
+              <span className="block text-sm text-kerb">{c.body}</span>
             </span>
           </label>
         ))}
@@ -80,14 +80,14 @@ export function CompanyForm() {
           </Field>
 
           {isVendor ? (
-            <fieldset className="space-y-4 rounded-lg border border-stone-200 p-4">
-              <legend className="px-1 text-sm font-semibold text-stone-700">Your vehicles</legend>
+            <fieldset className="space-y-4 rounded-lg border border-line p-4">
+              <legend className="px-1 text-sm font-semibold text-ink">Your vehicles</legend>
               <div className="space-y-2">
-                <p className="text-sm font-medium text-stone-700">Which vehicles do you rent out?</p>
+                <p className="text-sm font-medium text-ink">Which vehicles do you rent out?</p>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {VEHICLE_TYPES.map((t) => (
                     <label key={t} className="flex items-center gap-2 text-sm">
-                      <input type="checkbox" name="vehicle_types" value={t} className="accent-brand-700" />
+                      <input type="checkbox" name="vehicle_types" value={t} className="accent-ink" />
                       {t}
                     </label>
                   ))}

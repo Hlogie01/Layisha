@@ -57,7 +57,7 @@ export function ConfirmForm({
           ✓
         </p>
         <h2 className="text-lg font-semibold">Location saved</h2>
-        <p className="text-sm text-stone-600">
+        <p className="text-sm text-kerb">
           Thank you. {businessName} will use this pin for your deliveries. You can close this page.
         </p>
       </div>
@@ -71,14 +71,14 @@ export function ConfirmForm({
       <input type="hidden" name="lng" value={pin?.lng ?? ""} />
 
       <div className="space-y-2">
-        <p className="text-sm font-medium text-stone-700">
+        <p className="text-sm font-medium text-ink">
           1. Stand where the driver should deliver, then tap the button.
         </p>
         <Button type="button" onClick={locate} disabled={locating} className="w-full" variant={pin ? "secondary" : "primary"}>
           {locating ? "Finding you…" : pin ? "Update my location" : "Share my location"}
         </Button>
         {pin ? (
-          <div className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">
+          <div className="rounded-lg bg-depot-soft px-3 py-2 text-sm text-depot-dark">
             Location found (accurate to about {pin.accuracy} m).{" "}
             <a
               href={`https://www.google.com/maps?q=${pin.lat},${pin.lng}`}
@@ -89,7 +89,7 @@ export function ConfirmForm({
               Check it on the map
             </a>
             {pin.accuracy > 100 ? (
-              <p className="mt-1 text-amber-700">
+              <p className="mt-1 text-hivis-ink">
                 This is not very accurate. Try again outside, away from buildings.
               </p>
             ) : null}

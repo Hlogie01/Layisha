@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Button, cx, Field, FormMessage, Input, Select, Textarea } from "@/components/ui";
+import { Button, cx, Field, FormMessage, Input, LogoMark, Select, Textarea } from "@/components/ui";
 import {
   compressPhoto,
   enqueue,
@@ -137,9 +137,12 @@ export function DriverApp() {
   if (invalidLink || (signedOut && !run)) {
     return (
       <Shell>
-        <div className="rounded-xl bg-white p-6 text-center shadow-sm">
+        <div className="flex justify-center pt-8">
+          <LogoMark size={56} label="Layisha" />
+        </div>
+        <div className="rounded-2xl border border-line bg-white p-6 text-center">
           <h1 className="text-lg font-semibold">This driver link isn&apos;t working</h1>
-          <p className="mt-2 text-sm text-stone-600">
+          <p className="mt-2 text-sm text-kerb">
             Ask your dispatcher to send you a new Layisha driver link on WhatsApp, then open it on
             this phone.
           </p>
@@ -151,7 +154,7 @@ export function DriverApp() {
   if (loading && !run) {
     return (
       <Shell>
-        <p className="text-center text-sm text-stone-500">Loading your stops…</p>
+        <p className="text-center text-sm text-kerb">Loading your stops…</p>
       </Shell>
     );
   }
@@ -162,20 +165,23 @@ export function DriverApp() {
     <Shell
       header={
         <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <p className="truncate font-semibold">{run?.driver.name ?? "Driver"}</p>
-            <p className="truncate text-xs text-stone-500">{run?.driver.company}</p>
+          <div className="flex min-w-0 items-center gap-3">
+            <LogoMark size={34} />
+            <div className="min-w-0">
+              <p className="truncate font-display text-lg font-bold">{run?.driver.name ?? "Driver"}</p>
+              <p className="truncate text-xs text-chalk/70">{run?.driver.company}</p>
+            </div>
           </div>
           <div className="flex items-center gap-2 text-xs">
             {pending > 0 ? (
-              <span className="rounded-full bg-amber-100 px-2 py-1 font-semibold text-amber-800">
+              <span className="rounded-full bg-hivis px-2 py-1 font-semibold text-ink">
                 {pending} waiting to upload
               </span>
             ) : null}
             <span
               className={cx(
                 "rounded-full px-2 py-1 font-semibold",
-                online ? "bg-emerald-100 text-emerald-800" : "bg-stone-200 text-stone-600",
+                online ? "bg-depot text-white" : "bg-ink-2 text-chalk",
               )}
             >
               {online ? "Online" : "Offline"}
@@ -185,7 +191,7 @@ export function DriverApp() {
       }
     >
       {signedOut ? (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="rounded-lg bg-signal-soft px-3 py-2 text-sm text-signal">
           Your driver link was switched off. Ask your dispatcher for a new one. Deliveries saved on
           this phone are kept.
         </p>
@@ -231,9 +237,9 @@ export function DriverApp() {
 
 function Shell({ header, children }: { header?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col bg-stone-100">
+    <div className="flex min-h-dvh flex-col bg-chalk">
       {header ? (
-        <header className="sticky top-0 z-10 border-b border-stone-200 bg-white px-4 py-3">
+        <header className="sticky top-0 z-10 bg-ink px-4 py-3 text-chalk">
           {header}
         </header>
       ) : null}
@@ -264,7 +270,7 @@ function StopList({
   return (
     <>
       {rejected.map((r) => (
-        <div key={r.podId} className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">
+        <div key={r.podId} className="rounded-lg bg-signal-soft px-3 py-2 text-sm text-signal">
           <p>
             <strong>{r.reference}</strong> was not accepted: {r.error}. Please phone your
             dispatcher.
@@ -276,14 +282,14 @@ function StopList({
       ))}
 
       <div className="flex items-baseline justify-between">
-        <h1 className="text-xl font-bold">Today&apos;s stops ({todo.length} left)</h1>
-        <button onClick={onRefresh} className="text-sm font-semibold text-brand-700">
+        <h1 className="text-2xl font-bold">Today&apos;s stops ({todo.length} left)</h1>
+        <button onClick={onRefresh} className="text-sm font-semibold text-ink underline decoration-hivis decoration-2 underline-offset-4">
           Refresh
         </button>
       </div>
 
       {todo.length === 0 ? (
-        <p className="rounded-xl bg-white p-6 text-center text-sm text-stone-600 shadow-sm">
+        <p className="rounded-2xl border border-line bg-white p-6 text-center text-sm text-kerb">
           {done.length ? "All done for today. Well done!" : "No stops assigned to you yet."}
         </p>
       ) : (
@@ -292,16 +298,16 @@ function StopList({
             <li key={s.id}>
               <button
                 onClick={() => onOpen(s.id)}
-                className="w-full rounded-xl bg-white p-4 text-left shadow-sm active:bg-stone-50"
+                className="w-full rounded-2xl border border-line bg-white p-4 text-left active:bg-hivis-soft"
               >
                 <div className="flex items-start gap-3">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-700 text-sm font-bold text-white">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-hivis text-sm font-bold text-ink">
                     {i + 1}
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold">{s.customer_name}</p>
-                    <p className="truncate text-sm text-stone-600">{s.items}</p>
-                    <p className="mt-1 text-xs text-stone-500">
+                    <p className="truncate text-sm text-kerb">{s.items}</p>
+                    <p className="mt-1 text-xs text-kerb">
                       {s.reference}
                       {s.payment_type !== "prepaid" ? ` · Collect ${rand(Number(s.amount_due))}` : " · Paid"}
                       {s.location_confirmed ? " · 📍 Pin" : ""}
@@ -316,20 +322,20 @@ function StopList({
 
       {done.length ? (
         <section className="space-y-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Done</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-kerb">Done</h2>
           <ul className="space-y-2">
             {done.map((s) => {
               const local = localStatus.get(s.id);
               const outcome = local?.outcome ?? s.status;
               return (
-                <li key={s.id} className="flex items-center justify-between rounded-lg bg-white px-4 py-3 text-sm shadow-sm">
+                <li key={s.id} className="flex items-center justify-between rounded-xl border border-line bg-white px-4 py-3 text-sm">
                   <span className="truncate">
                     {s.reference} · {s.customer_name}
                   </span>
                   <span
                     className={cx(
                       "shrink-0 text-xs font-semibold",
-                      outcome === "delivered" ? "text-emerald-700" : "text-red-700",
+                      outcome === "delivered" ? "text-depot-dark" : "text-signal",
                     )}
                   >
                     {outcome === "delivered" ? "Delivered" : "Failed"}
@@ -343,7 +349,7 @@ function StopList({
       ) : null}
 
       {fetchedAt ? (
-        <p className="text-center text-xs text-stone-400">
+        <p className="text-center text-xs text-kerb">
           Last updated{" "}
           {new Intl.DateTimeFormat("en-ZA", { hour: "2-digit", minute: "2-digit" }).format(new Date(fetchedAt))}
         </p>
@@ -369,43 +375,43 @@ function StopDetail({
   const finished = stop.status === "delivered" || stop.status === "failed" || recorded;
   return (
     <div className="space-y-4">
-      <button onClick={onBack} className="text-sm font-semibold text-brand-700">
+      <button onClick={onBack} className="text-sm font-semibold text-ink underline decoration-hivis decoration-2 underline-offset-4">
         ← All stops
       </button>
-      <div className="space-y-3 rounded-xl bg-white p-4 shadow-sm">
+      <div className="space-y-3 rounded-2xl border border-line bg-white p-4">
         <div>
-          <p className="text-xs font-semibold text-stone-500">{stop.reference}</p>
+          <p className="text-xs font-semibold text-kerb">{stop.reference}</p>
           <h1 className="text-xl font-bold">{stop.customer_name}</h1>
         </div>
         <p>{stop.items}</p>
         <p className="font-semibold">
           {stop.payment_type === "prepaid" ? "Already paid" : `Collect ${rand(Number(stop.amount_due))} (${stop.payment_type.toUpperCase()})`}
         </p>
-        {stop.address_text ? <p className="text-sm text-stone-600">{stop.address_text}</p> : null}
+        {stop.address_text ? <p className="text-sm text-kerb">{stop.address_text}</p> : null}
         {stop.landmark_note ? (
-          <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">📍 {stop.landmark_note}</p>
+          <p className="rounded-lg bg-hivis-soft px-3 py-2 text-sm text-hivis-ink">📍 {stop.landmark_note}</p>
         ) : null}
-        {stop.notes ? <p className="text-sm text-stone-600">Note: {stop.notes}</p> : null}
+        {stop.notes ? <p className="text-sm text-kerb">Note: {stop.notes}</p> : null}
         {!stop.location_confirmed ? (
-          <p className="text-xs font-medium text-amber-700">Customer hasn&apos;t confirmed a pin. Phone them if unsure.</p>
+          <p className="text-xs font-medium text-hivis-ink">Customer hasn&apos;t confirmed a pin. Phone them if unsure.</p>
         ) : null}
 
         <div className="grid grid-cols-2 gap-2 pt-1">
           {nav ? (
-            <a href={nav} target="_blank" rel="noreferrer" className="rounded-lg bg-stone-900 px-3 py-3 text-center text-sm font-semibold text-white">
+            <a href={nav} target="_blank" rel="noreferrer" className="rounded-xl bg-ink px-3 py-3.5 text-center text-base font-semibold text-chalk">
               Navigate
             </a>
           ) : (
-            <span className="rounded-lg bg-stone-200 px-3 py-3 text-center text-sm text-stone-500">No location</span>
+            <span className="rounded-xl bg-line px-3 py-3.5 text-center text-base text-kerb">No location</span>
           )}
-          <a href={`tel:${stop.customer_whatsapp}`} className="rounded-lg border border-stone-300 px-3 py-3 text-center text-sm font-semibold">
+          <a href={`tel:${stop.customer_whatsapp}`} className="rounded-xl border border-line bg-white px-3 py-3.5 text-center text-base font-semibold">
             Call
           </a>
           <a
             href={`https://wa.me/${stop.customer_whatsapp.replace(/\D/g, "")}`}
             target="_blank"
             rel="noreferrer"
-            className="col-span-2 rounded-lg border border-stone-300 px-3 py-3 text-center text-sm font-semibold"
+            className="col-span-2 rounded-xl border border-line bg-white px-3 py-3.5 text-center text-base font-semibold"
           >
             WhatsApp customer
           </a>
@@ -413,13 +419,13 @@ function StopDetail({
       </div>
 
       {finished ? (
-        <p className="rounded-lg bg-stone-200 px-3 py-2 text-center text-sm">This stop is already done.</p>
+        <p className="rounded-lg bg-line px-3 py-2 text-center text-sm">This stop is already done.</p>
       ) : (
         <div className="grid grid-cols-2 gap-2">
-          <Button onClick={onFail} variant="secondary" className="py-4">
+          <Button onClick={onFail} variant="secondary" className="py-4 text-base">
             Couldn&apos;t deliver
           </Button>
-          <Button onClick={onDeliver} className="py-4">
+          <Button onClick={onDeliver} className="py-4 text-base">
             Delivered
           </Button>
         </div>
@@ -525,14 +531,14 @@ function OutcomeForm({
 
   return (
     <div className="space-y-4">
-      <button onClick={onCancel} className="text-sm font-semibold text-brand-700">
+      <button onClick={onCancel} className="text-sm font-semibold text-ink underline decoration-hivis decoration-2 underline-offset-4">
         ← Back
       </button>
-      <div className="space-y-5 rounded-xl bg-white p-4 shadow-sm">
+      <div className="space-y-5 rounded-2xl border border-line bg-white p-4">
         <div>
-          <p className="text-xs font-semibold text-stone-500">{stop.reference}</p>
+          <p className="text-xs font-semibold text-kerb">{stop.reference}</p>
           <h1 className="text-xl font-bold">{delivered ? "Confirm delivery" : "Couldn't deliver"}</h1>
-          <p className="text-sm text-stone-600">{stop.customer_name}</p>
+          <p className="text-sm text-kerb">{stop.customer_name}</p>
         </div>
 
         {!delivered ? (
@@ -553,10 +559,10 @@ function OutcomeForm({
         ) : null}
 
         <div className="space-y-2">
-          <p className="text-sm font-medium text-stone-700">
+          <p className="text-sm font-medium text-ink">
             {delivered ? "Photo of the delivered goods" : "Photo (optional, e.g. the locked gate)"}
           </p>
-          <label className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-stone-300 p-4 text-sm font-semibold text-stone-600">
+          <label className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-kerb bg-white p-5 text-base font-semibold text-ink">
             {preview ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={preview} alt="Delivery photo" className="max-h-56 rounded-md object-contain" />
@@ -565,7 +571,7 @@ function OutcomeForm({
             )}
             <input type="file" accept="image/*" capture="environment" onChange={onPhoto} className="sr-only" />
           </label>
-          {preview ? <p className="text-center text-xs text-stone-500">Tap the photo to retake it</p> : null}
+          {preview ? <p className="text-center text-xs text-kerb">Tap the photo to retake it</p> : null}
         </div>
 
         {delivered ? (
@@ -591,7 +597,7 @@ function OutcomeForm({
                 </Select>
               </Field>
             )}
-            <button type="button" onClick={() => setNoPin(!noPin)} className="text-sm font-semibold text-brand-700">
+            <button type="button" onClick={() => setNoPin(!noPin)} className="text-sm font-semibold text-ink underline decoration-hivis decoration-2 underline-offset-4">
               {noPin ? "Enter PIN instead" : "Customer can't give a PIN"}
             </button>
 
@@ -619,10 +625,10 @@ function OutcomeForm({
 
         <FormMessage message={error} />
 
-        <Button onClick={save} disabled={saving} className="w-full py-4">
+        <Button onClick={save} disabled={saving} className="w-full py-4 text-base">
           {saving ? "Saving…" : delivered ? "Save delivery" : "Save"}
         </Button>
-        <p className="text-center text-xs text-stone-500">
+        <p className="text-center text-xs text-kerb">
           No signal? It&apos;s saved on your phone and uploads automatically later.
         </p>
       </div>

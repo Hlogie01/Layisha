@@ -125,7 +125,7 @@ async function Board({ searchParams }: { searchParams: PageProps<"/dashboard">["
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Dispatch</h1>
-          <p className="text-sm text-stone-500">Orders for the selected day, grouped by driver.</p>
+          <p className="text-sm text-kerb">Orders for the selected day, grouped by driver.</p>
         </div>
         <DatePicker value={date} />
       </div>
@@ -137,17 +137,17 @@ async function Board({ searchParams }: { searchParams: PageProps<"/dashboard">["
           { label: "Failed", value: String(failed.length) },
           { label: "To collect", value: formatRand(toCollect) },
         ].map((s) => (
-          <div key={s.label} className="rounded-xl border border-stone-200 bg-white p-4">
-            <dt className="text-xs font-medium text-stone-500">{s.label}</dt>
+          <div key={s.label} className="rounded-xl border border-line bg-white p-4">
+            <dt className="text-xs font-medium text-kerb">{s.label}</dt>
             <dd className="mt-1 text-xl font-bold">{s.value}</dd>
           </div>
         ))}
       </dl>
 
       {orders.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-stone-300 bg-white p-10 text-center">
+        <div className="rounded-xl border border-dashed border-line bg-white p-10 text-center">
           <p className="font-semibold">No orders for this day yet</p>
-          <p className="mt-1 text-sm text-stone-500">
+          <p className="mt-1 text-sm text-kerb">
             {drivers.length === 0
               ? "Start by adding your drivers, then create your first order."
               : "Create an order to get started."}
@@ -156,14 +156,14 @@ async function Board({ searchParams }: { searchParams: PageProps<"/dashboard">["
             {drivers.length === 0 ? (
               <Link
                 href="/dashboard/drivers"
-                className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-semibold hover:bg-stone-100"
+                className="rounded-lg border border-line px-4 py-2 text-sm font-semibold hover:bg-chalk"
               >
                 Add drivers
               </Link>
             ) : null}
             <Link
               href="/dashboard/orders/new"
-              className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800"
+              className="rounded-lg bg-hivis px-4 py-2 text-sm font-semibold text-ink hover:bg-hivis-dark"
             >
               New order
             </Link>
@@ -178,12 +178,12 @@ async function Board({ searchParams }: { searchParams: PageProps<"/dashboard">["
                 <header className="flex items-baseline justify-between">
                   <h2 className="font-semibold">
                     {g.title}{" "}
-                    <span className="text-sm font-normal text-stone-500">({g.orders.length})</span>
+                    <span className="text-sm font-normal text-kerb">({g.orders.length})</span>
                   </h2>
-                  {g.subtitle ? <span className="text-xs text-stone-500">{g.subtitle}</span> : null}
+                  {g.subtitle ? <span className="text-xs text-kerb">{g.subtitle}</span> : null}
                 </header>
                 {g.orders.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-stone-300 p-4 text-sm text-stone-500">
+                  <p className="rounded-lg border border-dashed border-line p-4 text-sm text-kerb">
                     No orders
                   </p>
                 ) : (
@@ -199,7 +199,7 @@ async function Board({ searchParams }: { searchParams: PageProps<"/dashboard">["
 
 export default function DispatchPage({ searchParams }: PageProps<"/dashboard">) {
   return (
-    <Suspense fallback={<p className="text-sm text-stone-500">Loading orders…</p>}>
+    <Suspense fallback={<p className="text-sm text-kerb">Loading orders…</p>}>
       <Board searchParams={searchParams} />
     </Suspense>
   );

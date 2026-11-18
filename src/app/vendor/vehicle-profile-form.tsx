@@ -19,7 +19,7 @@ export function VehicleProfileForm({
   return (
     <form action={action} className="space-y-4">
       <div className="space-y-2">
-        <p className="text-sm font-medium text-stone-700">Which vehicles do you rent out?</p>
+        <p className="text-sm font-medium text-ink">Which vehicles do you rent out?</p>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {VEHICLE_TYPES.map((t) => (
             <label key={t} className="flex items-center gap-2 text-sm">
@@ -28,7 +28,7 @@ export function VehicleProfileForm({
                 name="vehicle_types"
                 value={t}
                 defaultChecked={defaults?.vehicle_types.includes(t)}
-                className="accent-brand-700"
+                className="accent-ink"
               />
               {t}
             </label>
@@ -52,7 +52,7 @@ export function VehicleProfileForm({
       </div>
       <FormMessage message={state.error} />
       {state.ok ? (
-        <p role="status" className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">
+        <p role="status" className="rounded-lg bg-depot-soft px-3 py-2 text-sm text-depot-dark">
           {state.ok}
         </p>
       ) : null}

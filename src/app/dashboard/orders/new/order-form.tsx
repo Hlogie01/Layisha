@@ -24,7 +24,7 @@ export function OrderForm({ drivers, today }: { drivers: Driver[]; today: string
   return (
     <form ref={formRef} action={action} className="space-y-6">
       <fieldset className="space-y-4">
-        <legend className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">
+        <legend className="mb-2 text-sm font-semibold uppercase tracking-wide text-kerb">
           Customer
         </legend>
         <Field label="Name" htmlFor="customer_name">
@@ -54,7 +54,7 @@ export function OrderForm({ drivers, today }: { drivers: Driver[]; today: string
       </fieldset>
 
       <fieldset className="space-y-4">
-        <legend className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">
+        <legend className="mb-2 text-sm font-semibold uppercase tracking-wide text-kerb">
           Order
         </legend>
         <Field label="Items" htmlFor="items">
@@ -102,7 +102,7 @@ export function OrderForm({ drivers, today }: { drivers: Driver[]; today: string
 
       <FormMessage message={state.error} />
       {state.ok ? (
-        <p role="status" className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">
+        <p role="status" className="rounded-lg bg-depot-soft px-3 py-2 text-sm text-depot-dark">
           {state.ok}
         </p>
       ) : null}

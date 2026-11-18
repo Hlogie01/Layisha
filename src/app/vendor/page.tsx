@@ -19,7 +19,7 @@ async function VendorHome() {
       <Card className="space-y-4">
         <div>
           <h1 className="text-xl font-bold">Rent out your vehicles</h1>
-          <p className="mt-1 text-sm text-stone-600">
+          <p className="mt-1 text-sm text-kerb">
             Have a bakkie, van or truck standing idle? Soon you&apos;ll be able to list it for other
             delivery companies on Layisha to rent by the month. Tell us what you have and we&apos;ll
             let you know as soon as the marketplace opens.
@@ -28,7 +28,7 @@ async function VendorHome() {
         {role === "owner" ? (
           <VehicleProfileForm action={enableVendor} submitLabel="Switch on vehicle rental" />
         ) : (
-          <p className="text-sm text-stone-500">Ask your account owner to switch this on.</p>
+          <p className="text-sm text-kerb">Ask your account owner to switch this on.</p>
         )}
       </Card>
     );
@@ -43,10 +43,10 @@ async function VendorHome() {
 
   return (
     <div className="space-y-4">
-      <Card className="space-y-3 border-brand-100 bg-brand-50">
-        <p className="text-xs font-semibold uppercase tracking-wide text-brand-700">Coming soon</p>
+      <Card className="space-y-3 border-hivis bg-hivis-soft">
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink underline decoration-hivis decoration-2 underline-offset-4">Coming soon</p>
         <h1 className="text-xl font-bold">The vehicle marketplace is on its way</h1>
-        <p className="text-sm text-stone-700">
+        <p className="text-sm text-ink">
           You&apos;re on the list. When it opens, you&apos;ll be able to list each vehicle with photos
           and a monthly price, get verified, and receive enquiries from delivery companies on
           Layisha. We&apos;ll contact you on {company.phone ?? "your phone number"} as soon as
@@ -69,7 +69,7 @@ async function VendorHome() {
 
       <Card className="space-y-2">
         <h2 className="font-semibold">Getting verified</h2>
-        <p className="text-sm text-stone-600">
+        <p className="text-sm text-kerb">
           Before your vehicles go live, we&apos;ll ask for: your ID or company registration, each
           vehicle&apos;s registration papers, a valid licence disc or roadworthy, and proof of insurance
           that covers the vehicle while it&apos;s rented out. Start getting these ready.
@@ -77,12 +77,12 @@ async function VendorHome() {
       </Card>
 
       {company.is_logistics ? (
-        <Link href="/dashboard" className="block text-center text-sm font-semibold text-brand-700">
+        <Link href="/dashboard" className="block text-center text-sm font-semibold text-ink underline decoration-hivis decoration-2 underline-offset-4">
           Go to my deliveries →
         </Link>
       ) : role === "owner" ? (
         <form action={enableLogistics} className="text-center">
-          <button className="text-sm font-semibold text-brand-700">
+          <button className="text-sm font-semibold text-ink underline decoration-hivis decoration-2 underline-offset-4">
             Do you also deliver goods? Switch on delivery tools →
           </button>
         </form>
@@ -93,13 +93,13 @@ async function VendorHome() {
 
 async function CompanyName() {
   const { company } = await requireVendorAccess();
-  return <span className="truncate text-sm text-stone-500">{company.name}</span>;
+  return <span className="truncate text-sm text-kerb">{company.name}</span>;
 }
 
 export default function VendorPage() {
   return (
     <div className="flex flex-1 flex-col">
-      <header className="border-b border-stone-200 bg-white">
+      <header className="border-b border-line bg-white">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
           <div className="flex min-w-0 items-baseline gap-3">
             <Logo />
@@ -108,12 +108,12 @@ export default function VendorPage() {
             </Suspense>
           </div>
           <form action={signOut}>
-            <button className="text-sm font-medium text-stone-500 hover:text-stone-800">Log out</button>
+            <button className="text-sm font-medium text-kerb hover:text-ink">Log out</button>
           </form>
         </div>
       </header>
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
-        <Suspense fallback={<p className="text-sm text-stone-500">Loading…</p>}>
+        <Suspense fallback={<p className="text-sm text-kerb">Loading…</p>}>
           <VendorHome />
         </Suspense>
       </main>

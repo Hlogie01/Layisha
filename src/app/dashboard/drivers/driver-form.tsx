@@ -25,7 +25,7 @@ export function DriverForm() {
       </Field>
       <FormMessage message={state.error} />
       {state.ok ? (
-        <p role="status" className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">
+        <p role="status" className="rounded-lg bg-depot-soft px-3 py-2 text-sm text-depot-dark">
           {state.ok}
         </p>
       ) : null}

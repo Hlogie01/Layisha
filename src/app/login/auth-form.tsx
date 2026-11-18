@@ -18,18 +18,18 @@ export function AuthForm() {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 rounded-lg bg-stone-100 p-1 text-sm font-semibold">
+      <div className="grid grid-cols-2 rounded-lg bg-chalk p-1 text-sm font-semibold">
         <button
           type="button"
           onClick={() => setMode("login")}
-          className={isLogin ? "rounded-md bg-white py-2 shadow-sm" : "py-2 text-stone-500"}
+          className={isLogin ? "rounded-md bg-white py-2 shadow-sm" : "py-2 text-kerb"}
         >
           Log in
         </button>
         <button
           type="button"
           onClick={() => setMode("signup")}
-          className={!isLogin ? "rounded-md bg-white py-2 shadow-sm" : "py-2 text-stone-500"}
+          className={!isLogin ? "rounded-md bg-white py-2 shadow-sm" : "py-2 text-kerb"}
         >
           Create account
         </button>
@@ -56,7 +56,7 @@ export function AuthForm() {
 
         <FormMessage message={state.error} />
         {state.info ? (
-          <p className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">{state.info}</p>
+          <p className="rounded-lg bg-depot-soft px-3 py-2 text-sm text-depot-dark">{state.info}</p>
         ) : null}
 
         <Button type="submit" className="w-full" disabled={pending}>

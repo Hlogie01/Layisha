@@ -8,15 +8,16 @@ export function Button({
   variant = "primary",
   className,
   ...props
-}: ComponentProps<"button"> & { variant?: "primary" | "secondary" | "ghost" }) {
+}: ComponentProps<"button"> & { variant?: "primary" | "secondary" | "dark" | "ghost" }) {
   return (
     <button
       className={cx(
-        "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60",
-        variant === "primary" && "bg-brand-700 text-white hover:bg-brand-800",
+        "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60",
+        variant === "primary" && "bg-hivis text-ink hover:bg-hivis-dark",
         variant === "secondary" &&
-          "border border-stone-300 bg-white text-stone-800 hover:bg-stone-100",
-        variant === "ghost" && "text-stone-600 hover:bg-stone-100",
+          "border border-line bg-white text-ink hover:bg-chalk",
+        variant === "dark" && "bg-ink text-chalk hover:bg-ink-2",
+        variant === "ghost" && "text-kerb hover:bg-line/60",
         className,
       )}
       {...props}
@@ -25,7 +26,7 @@ export function Button({
 }
 
 const fieldClass =
-  "w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-base text-stone-900 placeholder:text-stone-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-100";
+  "w-full rounded-[10px] border border-line bg-white px-3 py-2.5 text-base text-ink placeholder:text-stone-400 focus:border-ink focus:outline-none focus:ring-2 focus:ring-hivis";
 
 export function Input({ className, ...props }: ComponentProps<"input">) {
   return <input className={cx(fieldClass, className)} {...props} />;
@@ -54,14 +55,14 @@ export function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={htmlFor} className="block text-sm font-medium text-stone-700">
+      <label htmlFor={htmlFor} className="block text-sm font-medium text-ink">
         {label}
       </label>
       {children}
       {error ? (
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-signal">{error}</p>
       ) : hint ? (
-        <p className="text-sm text-stone-500">{hint}</p>
+        <p className="text-sm text-kerb">{hint}</p>
       ) : null}
     </div>
   );
@@ -70,7 +71,7 @@ export function Field({
 export function Card({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
-      className={cx("rounded-xl border border-stone-200 bg-white p-5 shadow-sm", className)}
+      className={cx("rounded-[20px] border border-line bg-white p-5", className)}
       {...props}
     />
   );
@@ -79,16 +80,61 @@ export function Card({ className, ...props }: ComponentProps<"div">) {
 export function FormMessage({ message }: { message?: string | null }) {
   if (!message) return null;
   return (
-    <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+    <p role="alert" className="rounded-lg bg-signal-soft px-3 py-2 text-sm text-signal">
       {message}
     </p>
   );
 }
 
-export function Logo({ className }: { className?: string }) {
+/** The Layisha mark: a bold L with road-marking chevrons on a safety-amber tile. */
+export function LogoMark({
+  size = 32,
+  label,
+  className,
+}: {
+  size?: number;
+  label?: string;
+  className?: string;
+}) {
   return (
-    <span className={cx("text-xl font-extrabold tracking-tight text-brand-700", className)}>
-      Layisha
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 64 64"
+      className={className}
+      {...(label ? { role: "img", "aria-label": label } : { "aria-hidden": true })}
+    >
+      <rect width="64" height="64" rx="14" fill="#FFB020" />
+      <polygon points="14,12 26,12 26,40 50,40 50,52 14,52" fill="#14181F" />
+      <polygon points="34,12 41,12 33,30 26,30" fill="#14181F" />
+      <polygon points="45,12 52,12 44,30 37,30" fill="#14181F" />
+    </svg>
+  );
+}
+
+export function Logo({
+  size = "md",
+  inverted = false,
+  className,
+}: {
+  size?: "sm" | "md" | "lg";
+  inverted?: boolean;
+  className?: string;
+}) {
+  const mark = size === "lg" ? 44 : size === "sm" ? 26 : 32;
+  const text = size === "lg" ? "text-3xl" : size === "sm" ? "text-lg" : "text-xl";
+  return (
+    <span className={cx("inline-flex items-center gap-2.5", className)}>
+      <LogoMark size={mark} />
+      <span
+        className={cx(
+          "font-display font-bold tracking-tight",
+          text,
+          inverted ? "text-chalk" : "text-ink",
+        )}
+      >
+        Layisha
+      </span>
     </span>
   );
 }
