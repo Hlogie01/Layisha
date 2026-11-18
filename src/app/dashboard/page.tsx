@@ -26,7 +26,7 @@ async function Board({ searchParams }: { searchParams: PageProps<"/dashboard">["
     supabase
       .from("orders")
       .select(
-        "id, reference, items, amount_due, payment_type, status, delivery_date, notes, driver_id, customer:customers(id, name, whatsapp, address_text, location_confirmed_at)",
+        "id, reference, items, amount_due, payment_type, status, delivery_date, notes, driver_id, customer:customers(id, name, whatsapp, address_text, lat, lng, landmark_note, location_confirmed_at)",
       )
       .eq("company_id", company.id)
       .eq("delivery_date", date)
