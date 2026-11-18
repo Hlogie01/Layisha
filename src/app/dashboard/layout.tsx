@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Logo } from "@/components/ui";
-import { requireMembership } from "@/lib/dal";
+import { requireLogistics } from "@/lib/dal";
 import { signOut } from "../login/actions";
 import { NavLinks } from "./nav-links";
 
 async function CompanyName() {
-  const { company } = await requireMembership();
+  const { company } = await requireLogistics();
   return <span className="truncate text-sm text-stone-500">{company.name}</span>;
 }
 

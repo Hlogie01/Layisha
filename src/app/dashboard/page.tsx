@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { requireMembership } from "@/lib/dal";
+import { requireLogistics } from "@/lib/dal";
 import { formatRand } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, POD_BUCKET } from "@/lib/supabase/admin";
@@ -67,7 +67,7 @@ async function attachProofs(orders: OrderRow[]) {
 }
 
 async function Board({ searchParams }: { searchParams: PageProps<"/dashboard">["searchParams"] }) {
-  const { company } = await requireMembership();
+  const { company } = await requireLogistics();
   const params = await searchParams;
   const rawDate = typeof params.date === "string" ? params.date : undefined;
   const date = rawDate && /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : todayInSa();
