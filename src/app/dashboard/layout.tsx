@@ -7,13 +7,13 @@ import { NavLinks } from "./nav-links";
 
 async function CompanyName() {
   const { company } = await requireLogistics();
-  return <span className="truncate text-sm text-stone-500">{company.name}</span>;
+  return <span className="truncate text-sm text-kerb">{company.name}</span>;
 }
 
 export default function DashboardLayout({ children }: LayoutProps<"/dashboard">) {
   return (
     <div className="flex flex-1 flex-col">
-      <header className="sticky top-0 z-10 border-b border-stone-200 bg-white/95 backdrop-blur">
+      <header className="sticky top-0 z-10 border-b border-line bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
           <div className="flex min-w-0 items-baseline gap-3">
             <Link href="/dashboard">
@@ -24,7 +24,7 @@ export default function DashboardLayout({ children }: LayoutProps<"/dashboard">)
             </Suspense>
           </div>
           <form action={signOut}>
-            <button className="text-sm font-medium text-stone-500 hover:text-stone-800">
+            <button className="text-sm font-medium text-kerb hover:text-ink">
               Log out
             </button>
           </form>

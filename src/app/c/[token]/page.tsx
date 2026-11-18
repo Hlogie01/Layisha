@@ -28,7 +28,7 @@ async function Confirm({ params }: { params: PageProps<"/c/[token]">["params"] }
     return (
       <div className="space-y-2 text-center">
         <h1 className="text-lg font-semibold">This link has expired</h1>
-        <p className="text-sm text-stone-600">
+        <p className="text-sm text-kerb">
           Ask the business that sent it for a new link.
         </p>
       </div>
@@ -47,13 +47,13 @@ async function Confirm({ params }: { params: PageProps<"/c/[token]">["params"] }
         <h1 className="text-lg font-semibold">
           Hi {req.customer_first_name}, where should we deliver?
         </h1>
-        <p className="mt-1 text-sm text-stone-600">
+        <p className="mt-1 text-sm text-kerb">
           <strong>{req.company_name}</strong> is delivering to you
           {req.order_reference ? ` (order ${req.order_reference})` : ""}
           {date ? ` on ${date}` : ""}. Share your location so the driver finds you first time.
         </p>
         {req.already_confirmed ? (
-          <p className="mt-2 text-sm text-brand-800">
+          <p className="mt-2 text-sm text-depot-dark">
             You already confirmed a location. You can update it below if it has changed.
           </p>
         ) : null}
@@ -71,11 +71,11 @@ export default function ConfirmLocationPage({ params }: PageProps<"/c/[token]">)
           <Logo />
         </div>
         <Card>
-          <Suspense fallback={<p className="text-sm text-stone-500">Loading…</p>}>
+          <Suspense fallback={<p className="text-sm text-kerb">Loading…</p>}>
             <Confirm params={params} />
           </Suspense>
         </Card>
-        <p className="text-center text-xs text-stone-500">
+        <p className="text-center text-xs text-kerb">
           Your location is only shared with the business delivering to you.
         </p>
       </div>

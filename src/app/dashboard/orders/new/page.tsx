@@ -30,7 +30,7 @@ export default function NewOrderPage() {
     <div className="mx-auto max-w-2xl space-y-4">
       <h1 className="text-2xl font-bold">New order</h1>
       <Card>
-        <Suspense fallback={<p className="text-sm text-stone-500">Loading…</p>}>
+        <Suspense fallback={<p className="text-sm text-kerb">Loading…</p>}>
           <NewOrder />
         </Suspense>
       </Card>

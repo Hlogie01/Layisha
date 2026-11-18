@@ -23,7 +23,7 @@ export function NavLinks() {
             href={l.href}
             className={cx(
               "whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium",
-              active ? "bg-brand-50 text-brand-800" : "text-stone-600 hover:bg-stone-100",
+              active ? "bg-ink text-chalk" : "text-kerb hover:bg-line/60",
             )}
           >
             {l.label}

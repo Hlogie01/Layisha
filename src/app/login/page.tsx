@@ -11,9 +11,9 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <Link href="/">
-            <Logo className="text-3xl" />
+            <Logo size="lg" />
           </Link>
-          <p className="mt-2 text-sm text-stone-600">Run your deliveries in one place.</p>
+          <p className="mt-2 text-sm text-kerb">Run your deliveries in one place.</p>
         </div>
         <Card>
           <AuthForm />
