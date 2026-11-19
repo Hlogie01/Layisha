@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const isDev = process.env.NODE_ENV !== "production";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const supabaseOrigin = supabaseUrl ? new URL(supabaseUrl).origin : "";
+// Live chat uses Supabase Realtime over a secure websocket.
+const supabaseRealtime = supabaseOrigin ? supabaseOrigin.replace(/^http/, "ws") : "";
 
 /**
  * Content Security Policy: the browser only loads scripts, styles, images and
@@ -16,7 +18,7 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: ${supabaseOrigin}`.trim(),
   "font-src 'self'",
-  `connect-src 'self' ${supabaseOrigin}${isDev ? " ws:" : ""}`.trim(),
+  `connect-src 'self' ${supabaseOrigin} ${supabaseRealtime}${isDev ? " ws:" : ""}`.trim(),
   "worker-src 'self'",
   "manifest-src 'self'",
   "frame-ancestors 'none'",

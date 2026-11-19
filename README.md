@@ -29,7 +29,7 @@ Logistics companies sign up and run their daily operations here. Later, vehicle 
 You need Node.js 20 or newer and a free Supabase project.
 
 1. **Create a Supabase project** at [supabase.com](https://supabase.com).
-2. **Set up the database.** In the Supabase dashboard, open **SQL Editor** and run each file in `supabase/migrations/` in order (`0001_init.sql`, `0002_location_requests.sql`, `0003_driver_app.sql`, `0004_account_types.sql`, then `0005_security_hardening.sql`). Paste the contents and click **Run**.
+2. **Set up the database.** In the Supabase dashboard, open **SQL Editor** and run each file in `supabase/migrations/` in order (`0001_init.sql`, `0002_location_requests.sql`, `0003_driver_app.sql`, `0004_account_types.sql`, `0005_security_hardening.sql`, then `0006_live_chat.sql`). Paste the contents and click **Run**.
 3. **For quick testing, turn off email confirmation:** **Authentication → Sign In / Providers → Email**, switch off "Confirm email". Switch it back on before going live.
 4. **Add your keys.** Copy `.env.example` to `.env.local` and fill in the values from **Project Settings → API**. The `service_role` key is needed for delivery photos; keep it secret.
 5. **Install and start:**
@@ -75,6 +75,21 @@ Customer location links expire after 7 days and only work for that one customer.
 
 When a delivery is saved with signal, a wrong PIN is caught straight away. With no signal, the delivery is saved on the phone and checked when it uploads; if it's rejected then, the driver sees a message to phone the dispatcher.
 
+## Live chat
+
+Dispatchers and drivers chat in real time: **Chat** in the dashboard menu, and the **Chat** button in the driver app.
+
+- One conversation per driver, with sent and read ticks
+- Tag a message with an order (**Message driver** on an order card, or **Message dispatch about this stop** in the driver app)
+- One-tap quick replies for drivers ("Customer is not answering", "Running about 20 minutes late"…)
+- **Message all drivers** broadcasts to every active driver
+- Unread counts in the menu, the browser tab title and the driver app, with a sound on the dashboard and vibration on the driver's phone
+- Drivers can send with no signal: messages wait on the phone and send when signal returns
+
+**How "live" works:** when a message is sent or read, the database sends a tiny ping through Supabase Realtime Broadcast to a secret topic for that driver and company. The ping contains no message text: the app then fetches new messages through its normal permission-checked routes. If Realtime can't connect, the apps fall back to checking every 20–30 seconds. Keep public Broadcast channels allowed in your Supabase Realtime settings (switching to private-only channels stops live updates).
+
+Push notifications when the app is closed will come with the Android and iPhone apps.
+
 ## Security
 
 - **Each company's data is walled off** with Postgres row-level security. Vehicle-only accounts can't reach delivery data.
@@ -87,7 +102,7 @@ When a delivery is saved with signal, a wrong PIN is caught straight away. With 
 - **Audit log** (Activity page, owners only): orders, PIN locks and resets, driver links, account changes, POPIA removals. Entries can't be edited or deleted.
 - **POPIA:** owners can remove a customer's personal details from the Customers page. `/privacy` is a draft privacy notice to complete and have reviewed.
 
-Run the database security tests (33 checks) on a local Postgres:
+Run the database security tests (52 checks) on a local Postgres:
 
 ```bash
 PGHOST=localhost PGUSER=postgres supabase/tests/run-local.sh
@@ -98,7 +113,7 @@ PGHOST=localhost PGUSER=postgres supabase/tests/run-local.sh
 - [ ] Supabase: **Authentication → Email**: turn **Confirm email** back ON
 - [ ] Supabase: Authentication → Passwords: minimum length 8+, and turn on leaked-password protection if your plan offers it
 - [ ] Set `SUPABASE_SERVICE_ROLE_KEY` and `NEXT_PUBLIC_APP_URL` in the hosting environment (never in browser code)
-- [ ] Run all 5 migrations in order
+- [ ] Run all 6 migrations in order
 - [ ] Complete `/privacy` (company details, Information Officer, data region, retention) and have it reviewed
 - [ ] Register your Information Officer with the Information Regulator
 - [ ] Check which region Supabase stores data in, and POPIA's rules on cross-border transfers

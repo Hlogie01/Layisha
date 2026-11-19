@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cx } from "@/components/ui";
+import { ChatNavBadge } from "./chat-nav-badge";
 
 const links = [
   { href: "/dashboard", label: "Dispatch" },
   { href: "/dashboard/orders/new", label: "New order" },
+  { href: "/dashboard/chat", label: "Chat" },
   { href: "/dashboard/drivers", label: "Drivers" },
   { href: "/dashboard/customers", label: "Customers" },
   { href: "/dashboard/activity", label: "Activity" },
@@ -24,11 +26,12 @@ export function NavLinks() {
             key={l.href}
             href={l.href}
             className={cx(
-              "whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium",
+              "inline-flex items-center whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium",
               active ? "bg-ink text-chalk" : "text-kerb hover:bg-line/60",
             )}
           >
             {l.label}
+            {l.href === "/dashboard/chat" ? <ChatNavBadge /> : null}
           </Link>
         );
       })}

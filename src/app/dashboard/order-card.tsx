@@ -233,6 +233,15 @@ export function OrderCard({ order, drivers }: { order: OrderRow; drivers: Driver
         </a>
       ) : null}
 
+      {order.driver_id ? (
+        <a
+          href={`/dashboard/chat?driver=${order.driver_id}&order=${order.id}`}
+          className="mt-3 ml-3 inline-flex text-sm font-semibold text-ink underline decoration-hivis decoration-2 underline-offset-4"
+        >
+          Message driver
+        </a>
+      ) : null}
+
       <div className="mt-4 grid grid-cols-2 gap-2">
         <label className="text-xs font-medium text-kerb">
           Driver
