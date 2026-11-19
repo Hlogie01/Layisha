@@ -149,6 +149,64 @@ select pg_temp.check((select lat from customers where id = :'c') is null, 'Custo
 set request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
 select pg_temp.expect_error(format('select forget_customer(%L)', :'c'), 'Other companies cannot remove your customers');
 
+
+-- ------------------------------------------------------------- chat ----
+reset role;
+insert into driver_access_tokens(token_hash, driver_id, company_id)
+  values (encode(digest('chat-driver-secret-dddddddddddddddddddd', 'sha256'), 'hex'), :'d', :'a');
+set role authenticated;
+set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+insert into drivers(company_id, name, phone) values (:'a', 'Other driver', '+27824444444') returning id as d3 \gset
+insert into customers(company_id, name, whatsapp) values (:'a', 'Chat Customer', '+27825555555') returning id as c3 \gset
+insert into orders(company_id, reference, customer_id, items, driver_id)
+  values (:'a', next_order_reference(:'a'), :'c3', 'boxes', :'d3') returning id as o3 \gset
+insert into chat_messages(id, company_id, driver_id, sender_type, sender_user_id, body)
+  values ('aaaaaaaa-0000-0000-0000-000000000001', :'a', :'d', 'dispatcher', '11111111-1111-1111-1111-111111111111', 'Use the back gate');
+insert into chat_messages(id, company_id, driver_id, sender_type, sender_user_id, body)
+  values ('aaaaaaaa-0000-0000-0000-000000000002', :'a', :'d3', 'dispatcher', '11111111-1111-1111-1111-111111111111', 'For the other driver');
+select pg_temp.check((select count(*) from chat_messages) = 2, 'Dispatcher can send chat messages');
+select pg_temp.expect_error(format(
+  'insert into chat_messages(id, company_id, driver_id, sender_type, sender_user_id, body) values (gen_random_uuid(), %L, %L, ''driver'', auth.uid(), ''fake'')', :'a', :'d'),
+  'Dispatcher cannot pretend to be the driver');
+select pg_temp.expect_error(format(
+  'insert into chat_messages(id, company_id, driver_id, sender_type, sender_user_id, body) values (gen_random_uuid(), %L, %L, ''dispatcher'', auth.uid(), ''   '')', :'a', :'d'),
+  'Empty chat messages rejected');
+
+set request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+select pg_temp.check((select count(*) from chat_messages) = 0, 'Company B cannot read Company A chats');
+select pg_temp.expect_error(format(
+  'insert into chat_messages(id, company_id, driver_id, sender_type, sender_user_id, body) values (gen_random_uuid(), %L, %L, ''dispatcher'', auth.uid(), ''hi'')', :'a', :'d'),
+  'Company B cannot message Company A drivers');
+select pg_temp.expect_error(format('select dispatch_broadcast(%L, ''hi'')', :'a'), 'Company B cannot broadcast to Company A');
+select pg_temp.check(dispatch_chat_topic(:'a') is null, 'Company B cannot get Company A live topic');
+
+reset role;
+set role anon;
+select pg_temp.expect_error('select count(*) from chat_messages', 'Anonymous users cannot read chats');
+select pg_temp.check(jsonb_array_length(driver_chat_fetch('chat-driver-secret-dddddddddddddddddddd')->'messages') = 1,
+  'Driver sees only messages in their own thread');
+select pg_temp.check(driver_chat_fetch('wrong-secret-wrong-secret-wrong-secret') is null, 'Wrong driver link sees no chat');
+select pg_temp.check((driver_chat_send('chat-driver-secret-dddddddddddddddddddd', 'bbbbbbbb-0000-0000-0000-000000000001',
+  'On my way', null, 'on_my_way')->>'ok')::boolean, 'Driver can reply');
+select pg_temp.check((driver_chat_send('chat-driver-secret-dddddddddddddddddddd', 'bbbbbbbb-0000-0000-0000-000000000001',
+  'On my way')->>'duplicate')::boolean, 'Offline resend of a chat message is ignored');
+select pg_temp.expect_error(format(
+  'select driver_chat_send(''chat-driver-secret-dddddddddddddddddddd'', gen_random_uuid(), ''about this'', %L)', :'o3'),
+  'Driver cannot tag another driver''s stop');
+select pg_temp.expect_error(
+  'select driver_chat_send(''chat-driver-secret-dddddddddddddddddddd'', ''aaaaaaaa-0000-0000-0000-000000000002'', ''hijack'')',
+  'Driver cannot reuse a message id from another thread');
+select pg_temp.check(driver_chat_mark_read('chat-driver-secret-dddddddddddddddddddd') = 1, 'Driver marks dispatcher message read');
+reset role;
+
+set role authenticated;
+set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+select pg_temp.check((select read_by_driver_at is not null from chat_messages where id = 'aaaaaaaa-0000-0000-0000-000000000001'),
+  'Dispatcher sees the read tick');
+select pg_temp.check(dispatch_chat_mark_read(:'d') = 1, 'Dispatcher marks driver reply read');
+select pg_temp.check(dispatch_broadcast(:'a', 'Depot closes at 4pm') =
+  (select count(*) from drivers where company_id = :'a' and active), 'Broadcast reaches every active driver');
+select pg_temp.check(dispatch_chat_topic(:'a') like 'co-%', 'Dispatcher gets their live topic');
 reset role;
 \echo
 \echo All security tests passed.

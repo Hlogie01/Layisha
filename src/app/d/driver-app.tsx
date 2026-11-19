@@ -16,6 +16,8 @@ import {
   type Run,
   type Stop,
 } from "./offline";
+import { DriverChat, useDriverChat } from "./driver-chat";
+import { UnreadBadge } from "@/components/chat-bits";
 
 const FAILURE_REASONS = [
   "Customer not home",
@@ -48,7 +50,12 @@ function navUrl(s: Stop) {
   return null;
 }
 
-type View = { name: "list" } | { name: "stop"; id: string } | { name: "deliver"; id: string } | { name: "fail"; id: string };
+type View =
+  | { name: "list" }
+  | { name: "chat"; orderId: string | null }
+  | { name: "stop"; id: string }
+  | { name: "deliver"; id: string }
+  | { name: "fail"; id: string };
 
 export function DriverApp() {
   const [invalidLink, setInvalidLink] = useState(false);
@@ -58,6 +65,7 @@ export function DriverApp() {
   const [signedOut, setSignedOut] = useState(false);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>({ name: "list" });
+  const chat = useDriverChat(!invalidLink);
 
   const refresh = useCallback(async () => {
     try {
@@ -159,7 +167,8 @@ export function DriverApp() {
     );
   }
 
-  const current = view.name !== "list" ? stops.find((s) => s.id === view.id) : undefined;
+  const current =
+    view.name !== "list" && view.name !== "chat" ? stops.find((s) => s.id === view.id) : undefined;
 
   return (
     <Shell
@@ -173,6 +182,15 @@ export function DriverApp() {
             </div>
           </div>
           <div className="flex items-center gap-2 text-xs">
+            <button
+              type="button"
+              onClick={() => setView({ name: "chat", orderId: null })}
+              className="inline-flex items-center rounded-full bg-ink-2 px-3 py-1.5 text-sm font-semibold text-chalk"
+              aria-label={chat.unread ? `Chat, ${chat.unread} unread` : "Chat"}
+            >
+              Chat
+              <UnreadBadge count={chat.unread} className="ml-1.5" />
+            </button>
             {pending > 0 ? (
               <span className="rounded-full bg-hivis px-2 py-1 font-semibold text-ink">
                 {pending} waiting to upload
@@ -197,7 +215,15 @@ export function DriverApp() {
         </p>
       ) : null}
 
-      {view.name === "list" || !current ? (
+      {view.name === "chat" ? (
+        <DriverChat
+          key={view.orderId ?? "chat"}
+          chat={chat}
+          stops={stops}
+          initialOrderId={view.orderId}
+          onBack={() => setView({ name: "list" })}
+        />
+      ) : view.name === "list" || !current ? (
         <StopList
           todo={todo}
           done={done}
@@ -218,6 +244,7 @@ export function DriverApp() {
           onBack={() => setView({ name: "list" })}
           onDeliver={() => setView({ name: "deliver", id: current.id })}
           onFail={() => setView({ name: "fail", id: current.id })}
+          onChat={() => setView({ name: "chat", orderId: current.id })}
         />
       ) : (
         <OutcomeForm
@@ -364,12 +391,14 @@ function StopDetail({
   onBack,
   onDeliver,
   onFail,
+  onChat,
 }: {
   stop: Stop;
   recorded?: OutboxItem;
   onBack: () => void;
   onDeliver: () => void;
   onFail: () => void;
+  onChat: () => void;
 }) {
   const nav = navUrl(stop);
   const finished = stop.status === "delivered" || stop.status === "failed" || recorded;
@@ -415,6 +444,13 @@ function StopDetail({
           >
             WhatsApp customer
           </a>
+          <button
+            type="button"
+            onClick={onChat}
+            className="col-span-2 rounded-xl border-2 border-hivis bg-hivis-soft px-3 py-3.5 text-center text-base font-semibold"
+          >
+            Message dispatch about this stop
+          </button>
         </div>
       </div>
 
